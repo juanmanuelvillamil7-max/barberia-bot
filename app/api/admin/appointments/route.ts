@@ -28,8 +28,13 @@ export async function GET(request: NextRequest) {
       .order("appointment_date", { ascending: true })
       .order("start_time", { ascending: true });
 
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+
     if (date) {
       query = query.eq("appointment_date", date);
+    } else if (startDate && endDate) {
+      query = query.gte("appointment_date", startDate).lte("appointment_date", endDate);
     }
 
     if (status) {
