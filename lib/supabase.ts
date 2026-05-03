@@ -1,17 +1,27 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-if (!process.env.SUPABASE_URL) throw new Error("Missing SUPABASE_URL");
-if (!process.env.SUPABASE_SERVICE_ROLE_KEY)
-  throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
+// Lazy singleton — validated at first use, not at module load (so build succeeds without env vars)
+let _client: SupabaseClient | null = null;
 
-// Service role client — bypasses RLS, only use server-side
-export const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
-);
+export function getSupabase(): SupabaseClient {
+  if (_client) return _client;
+
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url) throw new Error("Missing SUPABASE_URL");
+  if (!key) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
+
+  _client = createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  return _client;
+}
+
+// Proxy so existing code using `supabase.from(...)` works unchanged
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    return (getSupabase() as unknown as Record<string | symbol, unknown>)[prop];
+  },
+});

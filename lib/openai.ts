@@ -5,7 +5,10 @@ import { getAvailableSlots, getServiceByName, getAllServices } from "./availabil
 import { BARBERIA_CONFIG } from "./config";
 import type { ConversationMessage, BookingResult } from "@/types";
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function getOpenAIClient(): OpenAI {
+  if (!process.env.OPENAI_API_KEY) throw new Error("Missing OPENAI_API_KEY");
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
 
 const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
@@ -279,6 +282,8 @@ export async function processMessage(
     })),
     { role: "user", content: userMessage },
   ];
+
+  const client = getOpenAIClient();
 
   // Agentic loop — handle multi-step function calls
   for (let iteration = 0; iteration < 5; iteration++) {
