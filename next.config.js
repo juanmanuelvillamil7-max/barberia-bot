@@ -1,7 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Allow longer function execution for Vercel Pro
-  // Free tier: 10s, Pro: 60s
+  env: {
+    // Map server-side vars to client-accessible vars at build time
+    NEXT_PUBLIC_SUPABASE_URL: process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEI: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEI,
+  },
 };
 
 module.exports = nextConfig;
