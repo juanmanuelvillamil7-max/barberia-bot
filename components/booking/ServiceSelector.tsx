@@ -8,23 +8,14 @@ interface ServiceSelectorProps {
   onSelect: (service: Service) => void;
 }
 
-export default function ServiceSelector({
-  services,
-  selected,
-  onSelect,
-}: ServiceSelectorProps) {
+export default function ServiceSelector({ services, selected, onSelect }: ServiceSelectorProps) {
   return (
     <div>
-      <h2 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "1rem", color: "#111827" }}>
-        ¿Qué servicio querés?
-      </h2>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2, 1fr)",
-          gap: "0.75rem",
-        }}
-      >
+      <p style={{ fontFamily: "var(--font-body)", fontSize: "0.68rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--stone)", marginBottom: "1.75rem" }}>
+        Seleccioná un servicio
+      </p>
+
+      <div style={{ borderTop: "1px solid var(--dust)" }}>
         {services.map((service) => {
           const isSelected = selected?.id === service.id;
           return (
@@ -32,48 +23,69 @@ export default function ServiceSelector({
               key={service.id}
               onClick={() => onSelect(service)}
               style={{
-                padding: "1rem",
-                border: `2px solid ${isSelected ? "#3b82f6" : "#e5e7eb"}`,
-                borderRadius: "0.75rem",
-                background: isSelected ? "#eff6ff" : "#ffffff",
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "1.25rem 0",
+                borderBottom: "1px solid var(--dust)",
+                background: isSelected ? "var(--ink)" : "transparent",
+                border: "none",
+                borderTop: "none",
                 cursor: "pointer",
                 textAlign: "left",
-                transition: "border-color 0.15s, background 0.15s",
+                marginLeft: isSelected ? "-1.25rem" : 0,
+                marginRight: isSelected ? "-1.25rem" : 0,
+                paddingLeft: isSelected ? "1.25rem" : 0,
+                paddingRight: isSelected ? "1.25rem" : 0,
+                transition: "background 0.2s",
+                position: "relative",
               }}
             >
-              <p
-                style={{
-                  margin: 0,
-                  fontWeight: 600,
-                  fontSize: "0.95rem",
-                  color: isSelected ? "#1d4ed8" : "#111827",
-                }}
-              >
-                {service.name}
-              </p>
-              <p
-                style={{
-                  margin: "0.25rem 0 0",
-                  fontSize: "0.8rem",
-                  color: "#6b7280",
-                }}
-              >
-                {service.duration_minutes} min
-              </p>
-              <p
-                style={{
-                  margin: "0.25rem 0 0",
-                  fontWeight: 700,
-                  fontSize: "1rem",
-                  color: isSelected ? "#1d4ed8" : "#374151",
-                }}
-              >
+              {isSelected && (
+                <div style={{ position: "absolute", bottom: 0, left: "1.25rem", right: "1.25rem", height: "1px", background: "var(--stone)" }} />
+              )}
+              <div>
+                <p style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "1.2rem",
+                  fontWeight: 400,
+                  color: isSelected ? "var(--cream)" : "var(--ink)",
+                  lineHeight: 1.2,
+                  marginBottom: "0.2rem",
+                }}>
+                  {service.name}
+                </p>
+                <p style={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: "0.72rem",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: isSelected ? "var(--rule)" : "var(--stone)",
+                }}>
+                  {service.duration_minutes} min
+                </p>
+              </div>
+              <p style={{
+                fontFamily: "var(--font-display)",
+                fontSize: "1.1rem",
+                fontWeight: 300,
+                color: isSelected ? "var(--cream)" : "var(--ink)",
+                whiteSpace: "nowrap",
+                marginLeft: "1rem",
+              }}>
                 ${service.price.toLocaleString("es-AR")}
               </p>
             </button>
           );
         })}
       </div>
+
+      {services.length === 0 && (
+        <p style={{ color: "var(--stone)", fontSize: "0.9rem", padding: "2rem 0" }}>
+          Cargando servicios…
+        </p>
+      )}
     </div>
   );
 }

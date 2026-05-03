@@ -27,14 +27,14 @@ function generateAvailableDates(): string[] {
   for (let i = 0; i <= BARBERIA_CONFIG.diasMaxReserva; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() + i);
-    const dayOfWeek = d.getDay();
-    if (BARBERIA_CONFIG.diasLaborales.includes(dayOfWeek)) {
+    if (BARBERIA_CONFIG.diasLaborales.includes(d.getDay())) {
       dates.push(d.toISOString().split("T")[0]);
     }
   }
-
   return dates;
 }
+
+const STEP_LABELS = ["Servicio", "Fecha", "Horario", "Confirmar"];
 
 export default function ReservarPage() {
   const [step, setStep] = useState<Step>(1);
@@ -47,12 +47,10 @@ export default function ReservarPage() {
   const [bookingResult, setBookingResult] = useState<BookingResultData | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [clientName, setClientName] = useState("");
-  const [clientEmail, setClientEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const availableDates = generateAvailableDates();
 
-  // Load services on mount
   useEffect(() => {
     fetch("/api/services")
       .then((r) => r.json())
@@ -60,57 +58,38 @@ export default function ReservarPage() {
       .catch(console.error);
   }, []);
 
-  // Load slots when date or service changes (step 3)
   const loadSlots = useCallback(async () => {
     if (!selectedDate || !selectedService) return;
     setSlotsLoading(true);
     setSlots([]);
     try {
-      const res = await fetch(
-        `/api/availability?date=${selectedDate}&duration=${selectedService.duration_minutes}`
-      );
+      const res = await fetch(`/api/availability?date=${selectedDate}&duration=${selectedService.duration_minutes}`);
       const data = await res.json();
       setSlots(data.slots ?? []);
     } catch (err) {
-      console.error("loadSlots error:", err);
+      console.error(err);
     } finally {
       setSlotsLoading(false);
     }
   }, [selectedDate, selectedService]);
 
   useEffect(() => {
-    if (step === 3) {
-      loadSlots();
-    }
+    if (step === 3) loadSlots();
   }, [step, loadSlots]);
 
   async function handleConfirm(name: string, email: string) {
     if (!selectedService || !selectedDate || !selectedTime) return;
     setClientName(name);
-    setClientEmail(email);
     setError(null);
     setBookingLoading(true);
     try {
       const res = await fetch("/api/book", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clientName: name,
-          clientEmail: email,
-          date: selectedDate,
-          time: selectedTime,
-          serviceId: selectedService.id,
-          serviceName: selectedService.name,
-        }),
+        body: JSON.stringify({ clientName: name, clientEmail: email, date: selectedDate, time: selectedTime, serviceId: selectedService.id, serviceName: selectedService.name }),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? "Error al confirmar el turno. Intentá de nuevo.");
-        return;
-      }
-
+      if (!res.ok) { setError(data.error ?? "Error al confirmar. Intentá de nuevo."); return; }
       setBookingResult(data.appointment);
       setStep(5);
     } catch {
@@ -128,131 +107,62 @@ export default function ReservarPage() {
     setSlots([]);
     setBookingResult(null);
     setClientName("");
-    setClientEmail("");
     setError(null);
   }
 
-  function goNext() {
-    setStep((prev) => (prev < 4 ? ((prev + 1) as Step) : prev));
-  }
-
-  function goPrev() {
-    setStep((prev) => (prev > 1 ? ((prev - 1) as Step) : prev));
-    setError(null);
-  }
-
-  const canGoNext =
-    (step === 1 && selectedService !== null) ||
-    (step === 2 && selectedDate !== null) ||
-    (step === 3 && selectedTime !== null);
+  function goNext() { setStep((p) => (p < 4 ? ((p + 1) as Step) : p)); }
+  function goPrev() { setStep((p) => (p > 1 ? ((p - 1) as Step) : p)); setError(null); }
 
   return (
-    <div
-      style={{
-        minHeight: "100dvh",
-        background: "#f4f4f5",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <div style={{ minHeight: "100dvh", background: "var(--cream)", display: "flex", flexDirection: "column" }}>
       {/* Header */}
-      <header
-        style={{
-          background: "#111827",
-          padding: "1rem 1.25rem",
-          color: "#ffffff",
-        }}
-      >
-        <h1 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700 }}>
+      <header style={{ padding: "2rem 1.5rem 1.5rem", maxWidth: "480px", width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: "0.62rem", letterSpacing: "0.25em", textTransform: "uppercase", color: "var(--stone)", marginBottom: "0.35rem" }}>
+          {BARBERIA_CONFIG.horarioAtencion.inicio}–{BARBERIA_CONFIG.horarioAtencion.fin}hs · Lun–Sáb
+        </p>
+        <h1 style={{ fontFamily: "var(--font-display)", fontSize: "2rem", fontWeight: 300, color: "var(--ink)", margin: 0, lineHeight: 1.1 }}>
           {BARBERIA_CONFIG.nombre}
         </h1>
-        <p style={{ margin: "0.2rem 0 0", fontSize: "0.8rem", color: "#9ca3af" }}>
-          Lun–Sáb · {BARBERIA_CONFIG.horarioAtencion.inicio} a {BARBERIA_CONFIG.horarioAtencion.fin}hs
-        </p>
       </header>
 
-      {/* Progress bar — only steps 1-4 */}
+      {/* Progress — steps 1–4 only */}
       {step <= 4 && (
-        <div
-          style={{
-            background: "#ffffff",
-            padding: "0.75rem 1.25rem",
-            borderBottom: "1px solid #e5e7eb",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "0.4rem",
-            }}
-          >
-            <p style={{ margin: 0, fontSize: "0.75rem", color: "#6b7280" }}>
-              Paso {step} de 4
-            </p>
-            {step > 1 && step < 5 && (
+        <div style={{ maxWidth: "480px", width: "100%", margin: "0 auto", padding: "0 1.5rem", boxSizing: "border-box", marginBottom: "2rem" }}>
+          <div style={{ display: "flex", gap: "4px", marginBottom: "0.6rem" }}>
+            {STEP_LABELS.map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  flex: 1,
+                  height: "2px",
+                  background: i < step ? "var(--ink)" : "var(--dust)",
+                  transition: "background 0.3s",
+                }}
+              />
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontFamily: "var(--font-body)", fontSize: "0.62rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--stone)" }}>
+              {STEP_LABELS[step - 1]}
+            </span>
+            {step > 1 && (
               <button
                 onClick={goPrev}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "#6b7280",
-                  fontSize: "0.8rem",
-                  cursor: "pointer",
-                  padding: 0,
-                }}
+                style={{ background: "none", border: "none", fontFamily: "var(--font-body)", fontSize: "0.72rem", letterSpacing: "0.1em", color: "var(--stone)", cursor: "pointer", padding: 0, textDecoration: "underline", textUnderlineOffset: "3px" }}
               >
-                ← Atrás
+                Atrás
               </button>
             )}
-          </div>
-          <div
-            style={{
-              height: "4px",
-              background: "#e5e7eb",
-              borderRadius: "2px",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                height: "100%",
-                width: `${(step / 4) * 100}%`,
-                background: "#3b82f6",
-                borderRadius: "2px",
-                transition: "width 0.3s",
-              }}
-            />
           </div>
         </div>
       )}
 
-      {/* Main content */}
-      <main
-        style={{
-          flex: 1,
-          padding: "1.5rem 1.25rem",
-          maxWidth: "480px",
-          width: "100%",
-          margin: "0 auto",
-          boxSizing: "border-box",
-        }}
-      >
+      {/* Main */}
+      <main style={{ flex: 1, padding: "0 1.5rem 2rem", maxWidth: "480px", width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
         {error && (
-          <div
-            style={{
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              borderRadius: "0.75rem",
-              padding: "0.75rem 1rem",
-              marginBottom: "1rem",
-              color: "#991b1b",
-              fontSize: "0.9rem",
-            }}
-          >
+          <p style={{ fontFamily: "var(--font-body)", fontSize: "0.8rem", color: "var(--ink)", borderLeft: "2px solid var(--ink)", paddingLeft: "0.75rem", marginBottom: "1.5rem" }}>
             {error}
-          </div>
+          </p>
         )}
 
         {step === 1 && (
@@ -262,7 +172,6 @@ export default function ReservarPage() {
             onSelect={(s) => { setSelectedService(s); goNext(); }}
           />
         )}
-
         {step === 2 && (
           <DaySelector
             availableDates={availableDates}
@@ -270,7 +179,6 @@ export default function ReservarPage() {
             onSelect={(d) => { setSelectedDate(d); setSelectedTime(null); goNext(); }}
           />
         )}
-
         {step === 3 && (
           <TimeSlotGrid
             slots={slots}
@@ -279,7 +187,6 @@ export default function ReservarPage() {
             loading={slotsLoading}
           />
         )}
-
         {step === 4 && selectedService && selectedDate && selectedTime && (
           <BookingConfirmation
             service={selectedService}
@@ -289,52 +196,18 @@ export default function ReservarPage() {
             isLoading={bookingLoading}
           />
         )}
-
         {step === 5 && bookingResult && selectedService && selectedDate && selectedTime && (
           <BookingSuccess
             service={selectedService}
             date={selectedDate}
             time={selectedTime}
             clientName={clientName}
-            clientEmail={clientEmail}
+            clientEmail={bookingResult.client_email}
             appointmentId={bookingResult.id}
             onNewBooking={handleNewBooking}
           />
         )}
       </main>
-
-      {/* Next button for steps that auto-advance on selection already, but just in case */}
-      {canGoNext && step <= 3 && (
-        <div
-          style={{
-            position: "sticky",
-            bottom: 0,
-            background: "#ffffff",
-            borderTop: "1px solid #e5e7eb",
-            padding: "1rem 1.25rem",
-          }}
-        >
-          <button
-            onClick={goNext}
-            style={{
-              width: "100%",
-              maxWidth: "480px",
-              margin: "0 auto",
-              display: "block",
-              padding: "0.85rem",
-              background: "#3b82f6",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: "0.75rem",
-              fontSize: "1rem",
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            Continuar
-          </button>
-        </div>
-      )}
     </div>
   );
 }

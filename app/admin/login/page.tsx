@@ -15,21 +15,14 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-
     try {
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        setError(`Error: ${data.error ?? "Credenciales incorrectas"}`);
-        return;
-      }
-
+      if (!res.ok) { setError(data.error ?? "Credenciales incorrectas"); return; }
       router.push("/admin");
       router.refresh();
     } catch {
@@ -39,118 +32,73 @@ export default function LoginPage() {
     }
   }
 
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "0.5rem 0",
+    border: "none",
+    borderBottom: "1px solid var(--dust)",
+    background: "transparent",
+    fontFamily: "var(--font-body)",
+    fontSize: "1rem",
+    color: "var(--ink)",
+    outline: "none",
+    boxSizing: "border-box",
+  };
+
   return (
-    <div
-      style={{
-        minHeight: "100dvh",
-        background: "#f4f4f5",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1.5rem",
-      }}
-    >
-      <div
-        style={{
-          background: "#ffffff",
-          borderRadius: "1rem",
-          padding: "2rem",
-          maxWidth: "400px",
-          width: "100%",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
-        }}
-      >
-        <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "56px",
-              height: "56px",
-              background: "#111827",
-              borderRadius: "50%",
-              marginBottom: "1rem",
-              fontSize: "1.5rem",
-            }}
-          >
-            ✂️
-          </div>
-          <h1 style={{ margin: 0, fontSize: "1.3rem", fontWeight: 700, color: "#111827" }}>
-            {BARBERIA_CONFIG.nombre}
-          </h1>
-          <p style={{ margin: "0.25rem 0 0", fontSize: "0.85rem", color: "#6b7280" }}>
+    <div style={{
+      minHeight: "100dvh",
+      background: "var(--cream)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "2rem 1.5rem",
+    }}>
+      <div style={{ maxWidth: "360px", width: "100%" }}>
+        {/* Brand */}
+        <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+          <div style={{ width: "32px", height: "1px", background: "var(--ink)", margin: "0 auto 1.5rem" }} />
+          <p style={{ fontFamily: "var(--font-body)", fontSize: "0.62rem", letterSpacing: "0.25em", textTransform: "uppercase", color: "var(--stone)", marginBottom: "0.5rem" }}>
             Panel de administración
           </p>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "2rem", fontWeight: 300, color: "var(--ink)", margin: 0 }}>
+            {BARBERIA_CONFIG.nombre}
+          </h1>
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
-          <div style={{ marginBottom: "1rem" }}>
-            <label
-              htmlFor="email"
-              style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, color: "#374151", marginBottom: "0.3rem" }}
-            >
+          <div style={{ marginBottom: "1.75rem" }}>
+            <label style={{ display: "block", fontFamily: "var(--font-body)", fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--stone)", marginBottom: "0.5rem" }}>
               Email
             </label>
             <input
-              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@barberia.com"
               required
-              style={{
-                width: "100%",
-                padding: "0.65rem 0.75rem",
-                border: "1px solid #d1d5db",
-                borderRadius: "0.5rem",
-                fontSize: "1rem",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
+              style={inputStyle}
             />
           </div>
 
-          <div style={{ marginBottom: "1.5rem" }}>
-            <label
-              htmlFor="password"
-              style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, color: "#374151", marginBottom: "0.3rem" }}
-            >
+          <div style={{ marginBottom: "2.5rem" }}>
+            <label style={{ display: "block", fontFamily: "var(--font-body)", fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--stone)", marginBottom: "0.5rem" }}>
               Contraseña
             </label>
             <input
-              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              style={{
-                width: "100%",
-                padding: "0.65rem 0.75rem",
-                border: "1px solid #d1d5db",
-                borderRadius: "0.5rem",
-                fontSize: "1rem",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
+              style={inputStyle}
             />
           </div>
 
           {error && (
-            <div
-              style={{
-                background: "#fef2f2",
-                border: "1px solid #fecaca",
-                borderRadius: "0.75rem",
-                padding: "0.75rem 1rem",
-                marginBottom: "1rem",
-                color: "#991b1b",
-                fontSize: "0.85rem",
-              }}
-            >
+            <p style={{ fontFamily: "var(--font-body)", fontSize: "0.8rem", color: "var(--ink)", borderLeft: "2px solid var(--ink)", paddingLeft: "0.75rem", marginBottom: "1.5rem" }}>
               {error}
-            </div>
+            </p>
           )}
 
           <button
@@ -158,17 +106,19 @@ export default function LoginPage() {
             disabled={isLoading}
             style={{
               width: "100%",
-              padding: "0.85rem",
-              background: isLoading ? "#93c5fd" : "#3b82f6",
-              color: "#ffffff",
+              padding: "1rem",
+              background: isLoading ? "var(--stone)" : "var(--ink)",
+              color: "var(--cream)",
               border: "none",
-              borderRadius: "0.75rem",
-              fontSize: "1rem",
-              fontWeight: 700,
+              fontFamily: "var(--font-body)",
+              fontSize: "0.72rem",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
               cursor: isLoading ? "not-allowed" : "pointer",
+              transition: "background 0.15s",
             }}
           >
-            {isLoading ? "Ingresando..." : "Ingresar"}
+            {isLoading ? "Ingresando…" : "Ingresar"}
           </button>
         </form>
       </div>

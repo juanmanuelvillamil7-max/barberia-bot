@@ -9,25 +9,26 @@ interface TimeSlotGridProps {
   loading?: boolean;
 }
 
-export default function TimeSlotGrid({
-  slots,
-  selected,
-  onSelect,
-  loading = false,
-}: TimeSlotGridProps) {
+export default function TimeSlotGrid({ slots, selected, onSelect, loading = false }: TimeSlotGridProps) {
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: "2rem 0", color: "#6b7280" }}>
-        Cargando horarios...
+      <div>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: "0.68rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--stone)", marginBottom: "1.75rem" }}>
+          Elegí un horario
+        </p>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: "0.85rem", color: "var(--stone)" }}>Cargando horarios…</p>
       </div>
     );
   }
 
   if (slots.length === 0) {
     return (
-      <div style={{ textAlign: "center", padding: "2rem 0" }}>
-        <p style={{ color: "#6b7280", margin: 0 }}>
-          No hay turnos disponibles para este día. Elegí otro.
+      <div>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: "0.68rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--stone)", marginBottom: "1.75rem" }}>
+          Elegí un horario
+        </p>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: "0.85rem", color: "var(--stone)" }}>
+          Sin horarios disponibles para este día.
         </p>
       </div>
     );
@@ -35,16 +36,11 @@ export default function TimeSlotGrid({
 
   return (
     <div>
-      <h2 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "1rem", color: "#111827" }}>
-        ¿A qué hora?
-      </h2>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "0.5rem",
-        }}
-      >
+      <p style={{ fontFamily: "var(--font-body)", fontSize: "0.68rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--stone)", marginBottom: "1.75rem" }}>
+        Elegí un horario
+      </p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" }}>
         {slots.map((slot) => {
           const isSelected = selected === slot.time;
           return (
@@ -52,15 +48,15 @@ export default function TimeSlotGrid({
               key={slot.time}
               onClick={() => onSelect(slot.time)}
               style={{
-                padding: "0.6rem 0.25rem",
-                border: `2px solid ${isSelected ? "#3b82f6" : "#e5e7eb"}`,
-                borderRadius: "0.5rem",
-                background: isSelected ? "#3b82f6" : "#ffffff",
-                color: isSelected ? "#ffffff" : "#374151",
+                padding: "0.75rem 0.25rem",
+                border: `1px solid ${isSelected ? "var(--ink)" : "var(--dust)"}`,
+                background: isSelected ? "var(--ink)" : "transparent",
+                color: isSelected ? "var(--cream)" : "var(--ink)",
+                fontFamily: "var(--font-body)",
+                fontSize: "0.85rem",
+                letterSpacing: "0.04em",
                 cursor: "pointer",
-                fontWeight: isSelected ? 700 : 500,
-                fontSize: "0.9rem",
-                transition: "border-color 0.15s, background 0.15s, color 0.15s",
+                transition: "background 0.15s, border-color 0.15s, color 0.15s",
               }}
             >
               {slot.display}

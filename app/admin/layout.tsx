@@ -6,14 +6,13 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ display: "flex", minHeight: "100dvh", background: "#f4f4f5" }}>
+    <div style={{ display: "flex", minHeight: "100dvh", background: "var(--cream)" }}>
       <Sidebar />
 
-      {/* Desktop main content offset */}
       <main
         style={{
           flex: 1,
-          padding: "2rem",
+          padding: "2.5rem 2rem",
           overflowY: "auto",
         }}
         className="admin-main"
@@ -24,13 +23,13 @@ export default async function AdminLayout({
       <style>{`
         @media (min-width: 768px) {
           .admin-main {
-            margin-left: 220px;
+            margin-left: 200px;
           }
         }
         @media (max-width: 767px) {
           .admin-main {
-            padding: 1rem;
-            padding-bottom: 5rem; /* space for mobile bottom nav */
+            padding: 1.5rem 1.25rem;
+            padding-bottom: 5rem;
           }
         }
       `}</style>

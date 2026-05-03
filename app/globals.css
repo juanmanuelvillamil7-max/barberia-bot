@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garant:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --ink: #0E0D0B;
+  --cream: #F8F7F3;
+  --stone: #6E6B63;
+  --dust: #E5E3DC;
+  --rule: #C9C6BD;
+  --font-display: 'Cormorant Garant', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--cream);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+input, button, select, textarea {
+  font-family: var(--font-body);
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+}

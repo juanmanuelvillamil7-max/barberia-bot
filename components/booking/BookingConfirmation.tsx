@@ -13,13 +13,7 @@ interface BookingConfirmationProps {
 
 const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
-export default function BookingConfirmation({
-  service,
-  date,
-  time,
-  onConfirm,
-  isLoading,
-}: BookingConfirmationProps) {
+export default function BookingConfirmation({ service, date, time, onConfirm, isLoading }: BookingConfirmationProps) {
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
@@ -30,15 +24,12 @@ export default function BookingConfirmation({
   })();
 
   function validate(): boolean {
-    const newErrors: { name?: string; email?: string } = {};
-    if (!clientName.trim()) newErrors.name = "Ingresá tu nombre";
-    if (!clientEmail.trim()) {
-      newErrors.email = "Ingresá tu email";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) {
-      newErrors.email = "Email inválido";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const e: { name?: string; email?: string } = {};
+    if (!clientName.trim()) e.name = "Ingresá tu nombre";
+    if (!clientEmail.trim()) e.email = "Ingresá tu email";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) e.email = "Email inválido";
+    setErrors(e);
+    return Object.keys(e).length === 0;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -47,87 +38,70 @@ export default function BookingConfirmation({
     await onConfirm(clientName.trim(), clientEmail.trim());
   }
 
+  const inputStyle = (hasError: boolean): React.CSSProperties => ({
+    width: "100%",
+    padding: "0.5rem 0",
+    border: "none",
+    borderBottom: `1px solid ${hasError ? "var(--ink)" : "var(--dust)"}`,
+    background: "transparent",
+    fontFamily: "var(--font-body)",
+    fontSize: "1rem",
+    color: "var(--ink)",
+    outline: "none",
+    boxSizing: "border-box",
+  });
+
   return (
     <div>
-      <h2 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "1rem", color: "#111827" }}>
+      <p style={{ fontFamily: "var(--font-body)", fontSize: "0.68rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--stone)", marginBottom: "1.75rem" }}>
         Confirmá tu turno
-      </h2>
+      </p>
 
       {/* Summary */}
-      <div
-        style={{
-          background: "#f8fafc",
-          border: "1px solid #e5e7eb",
-          borderRadius: "0.75rem",
-          padding: "1rem",
-          marginBottom: "1.25rem",
-        }}
-      >
-        <Row label="Servicio" value={service.name} />
-        <Row label="Precio" value={`$${service.price.toLocaleString("es-AR")}`} />
-        <Row label="Fecha" value={displayDate} />
-        <Row label="Hora" value={`${time}hs`} last />
+      <div style={{ borderTop: "1px solid var(--dust)", marginBottom: "2rem" }}>
+        <SummaryRow label="Servicio" value={service.name} />
+        <SummaryRow label="Precio" value={`$${service.price.toLocaleString("es-AR")}`} />
+        <SummaryRow label="Fecha" value={displayDate} />
+        <SummaryRow label="Hora" value={`${time}hs`} last />
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} noValidate>
-        <div style={{ marginBottom: "1rem" }}>
-          <label
-            htmlFor="clientName"
-            style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, color: "#374151", marginBottom: "0.3rem" }}
-          >
+        <div style={{ marginBottom: "1.75rem" }}>
+          <label style={{ display: "block", fontFamily: "var(--font-body)", fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--stone)", marginBottom: "0.5rem" }}>
             Nombre completo
           </label>
           <input
-            id="clientName"
             type="text"
             value={clientName}
             onChange={(e) => setClientName(e.target.value)}
             placeholder="Tu nombre"
-            style={{
-              width: "100%",
-              padding: "0.65rem 0.75rem",
-              border: `1px solid ${errors.name ? "#ef4444" : "#d1d5db"}`,
-              borderRadius: "0.5rem",
-              fontSize: "1rem",
-              outline: "none",
-              boxSizing: "border-box",
-            }}
+            style={inputStyle(!!errors.name)}
           />
           {errors.name && (
-            <p style={{ color: "#ef4444", fontSize: "0.8rem", margin: "0.25rem 0 0" }}>{errors.name}</p>
+            <p style={{ fontFamily: "var(--font-body)", fontSize: "0.72rem", color: "var(--ink)", marginTop: "0.35rem" }}>{errors.name}</p>
           )}
         </div>
 
-        <div style={{ marginBottom: "1.5rem" }}>
-          <label
-            htmlFor="clientEmail"
-            style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, color: "#374151", marginBottom: "0.3rem" }}
-          >
+        <div style={{ marginBottom: "2.5rem" }}>
+          <label style={{ display: "block", fontFamily: "var(--font-body)", fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--stone)", marginBottom: "0.5rem" }}>
             Email
           </label>
           <input
-            id="clientEmail"
             type="email"
             value={clientEmail}
             onChange={(e) => setClientEmail(e.target.value)}
             placeholder="tu@email.com"
-            style={{
-              width: "100%",
-              padding: "0.65rem 0.75rem",
-              border: `1px solid ${errors.email ? "#ef4444" : "#d1d5db"}`,
-              borderRadius: "0.5rem",
-              fontSize: "1rem",
-              outline: "none",
-              boxSizing: "border-box",
-            }}
+            style={inputStyle(!!errors.email)}
           />
           {errors.email && (
-            <p style={{ color: "#ef4444", fontSize: "0.8rem", margin: "0.25rem 0 0" }}>{errors.email}</p>
+            <p style={{ fontFamily: "var(--font-body)", fontSize: "0.72rem", color: "var(--ink)", marginTop: "0.35rem" }}>{errors.email}</p>
           )}
-          <p style={{ color: "#9ca3af", fontSize: "0.75rem", margin: "0.25rem 0 0" }}>
-            Te enviamos la confirmación por email.
-          </p>
+          {!errors.email && (
+            <p style={{ fontFamily: "var(--font-body)", fontSize: "0.68rem", color: "var(--rule)", marginTop: "0.5rem" }}>
+              Te enviamos la confirmación por email.
+            </p>
+          )}
         </div>
 
         <button
@@ -135,38 +109,36 @@ export default function BookingConfirmation({
           disabled={isLoading}
           style={{
             width: "100%",
-            padding: "0.85rem",
-            background: isLoading ? "#93c5fd" : "#3b82f6",
-            color: "#ffffff",
+            padding: "1rem",
+            background: isLoading ? "var(--stone)" : "var(--ink)",
+            color: "var(--cream)",
             border: "none",
-            borderRadius: "0.75rem",
-            fontSize: "1rem",
-            fontWeight: 700,
+            fontFamily: "var(--font-body)",
+            fontSize: "0.72rem",
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
             cursor: isLoading ? "not-allowed" : "pointer",
             transition: "background 0.15s",
           }}
         >
-          {isLoading ? "Confirmando..." : "Confirmar turno"}
+          {isLoading ? "Confirmando…" : "Confirmar turno"}
         </button>
       </form>
     </div>
   );
 }
 
-function Row({ label, value, last }: { label: string; value: string; last?: boolean }) {
+function SummaryRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingBottom: last ? 0 : "0.5rem",
-        marginBottom: last ? 0 : "0.5rem",
-        borderBottom: last ? "none" : "1px solid #e5e7eb",
-      }}
-    >
-      <span style={{ fontSize: "0.85rem", color: "#6b7280" }}>{label}</span>
-      <span style={{ fontSize: "0.9rem", fontWeight: 600, color: "#111827" }}>{value}</span>
+    <div style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "baseline",
+      padding: "0.9rem 0",
+      borderBottom: last ? "none" : "1px solid var(--dust)",
+    }}>
+      <span style={{ fontFamily: "var(--font-body)", fontSize: "0.68rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--stone)" }}>{label}</span>
+      <span style={{ fontFamily: "var(--font-display)", fontSize: "1.05rem", fontWeight: 400, color: "var(--ink)" }}>{value}</span>
     </div>
   );
 }
