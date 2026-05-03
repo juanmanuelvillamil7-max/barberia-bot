@@ -64,88 +64,94 @@ export default function ServiciosPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "#111827" }}>
-          Servicios
-        </h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "2.5rem" }}>
+        <div>
+          <p style={{ fontFamily: "var(--font-body)", fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--stone)", marginBottom: "0.4rem" }}>
+            Gestión
+          </p>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "2rem", fontWeight: 300, color: "var(--ink)", margin: 0 }}>
+            Servicios
+          </h1>
+        </div>
         <button
           onClick={openCreate}
           style={{
-            padding: "0.6rem 1rem",
-            background: "#3b82f6",
+            padding: "0.65rem 1.25rem",
+            background: "#B8922A",
             color: "#ffffff",
             border: "none",
-            borderRadius: "0.75rem",
-            fontSize: "0.9rem",
-            fontWeight: 600,
+            fontFamily: "var(--font-body)",
+            fontSize: "0.68rem",
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
             cursor: "pointer",
           }}
         >
-          + Nuevo servicio
+          Nuevo servicio
         </button>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "2rem", color: "#9ca3af" }}>
-          Cargando servicios...
-        </div>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: "0.85rem", color: "var(--stone)" }}>
+          Cargando servicios…
+        </p>
       ) : services.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "2rem", background: "#f9fafb", borderRadius: "0.75rem", color: "#6b7280" }}>
-          No hay servicios. Creá uno nuevo.
-        </div>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: "0.85rem", color: "var(--stone)" }}>
+          Sin servicios. Creá uno nuevo.
+        </p>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <div style={{ borderTop: "1px solid var(--dust)" }}>
           {services.map((service) => (
             <div
               key={service.id}
               style={{
-                background: "#ffffff",
-                border: "1px solid #e5e7eb",
-                borderRadius: "0.75rem",
-                padding: "1rem 1.25rem",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                gap: "0.75rem",
+                padding: "1rem 0",
+                borderBottom: "1px solid var(--dust)",
+                gap: "1rem",
               }}
             >
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: "0.95rem", color: "#111827" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.2rem" }}>
+                  <p style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 400, color: "var(--ink)", margin: 0 }}>
                     {service.name}
                   </p>
                   {!service.active && (
-                    <span
-                      style={{
-                        background: "#f3f4f6",
-                        color: "#6b7280",
-                        fontSize: "0.65rem",
-                        fontWeight: 600,
-                        padding: "0.15rem 0.4rem",
-                        borderRadius: "999px",
-                        textTransform: "uppercase",
-                      }}
-                    >
+                    <span style={{
+                      fontFamily: "var(--font-body)",
+                      fontSize: "0.55rem",
+                      letterSpacing: "0.15em",
+                      textTransform: "uppercase",
+                      color: "var(--stone)",
+                      border: "1px solid var(--dust)",
+                      padding: "0.15rem 0.4rem",
+                    }}>
                       Inactivo
                     </span>
                   )}
                 </div>
-                <p style={{ margin: "0.2rem 0 0", fontSize: "0.8rem", color: "#6b7280" }}>
+                <p style={{ fontFamily: "var(--font-body)", fontSize: "0.72rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--stone)", margin: 0 }}>
                   {service.duration_minutes} min · ${service.price.toLocaleString("es-AR")}
                 </p>
               </div>
 
-              <div style={{ display: "flex", gap: "0.5rem" }}>
+              <div style={{ display: "flex", gap: "0.75rem" }}>
                 <button
                   onClick={() => openEdit(service)}
                   style={{
-                    padding: "0.4rem 0.75rem",
-                    background: "#f3f4f6",
+                    background: "none",
                     border: "none",
-                    borderRadius: "0.5rem",
-                    fontSize: "0.8rem",
+                    fontFamily: "var(--font-body)",
+                    fontSize: "0.68rem",
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    color: "var(--stone)",
                     cursor: "pointer",
-                    color: "#374151",
+                    padding: 0,
+                    textDecoration: "underline",
+                    textUnderlineOffset: "3px",
                   }}
                 >
                   Editar
@@ -153,13 +159,17 @@ export default function ServiciosPage() {
                 <button
                   onClick={() => handleDelete(service.id)}
                   style={{
-                    padding: "0.4rem 0.75rem",
-                    background: "#fef2f2",
+                    background: "none",
                     border: "none",
-                    borderRadius: "0.5rem",
-                    fontSize: "0.8rem",
+                    fontFamily: "var(--font-body)",
+                    fontSize: "0.68rem",
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    color: "var(--ink)",
                     cursor: "pointer",
-                    color: "#991b1b",
+                    padding: 0,
+                    textDecoration: "underline",
+                    textUnderlineOffset: "3px",
                   }}
                 >
                   Eliminar
