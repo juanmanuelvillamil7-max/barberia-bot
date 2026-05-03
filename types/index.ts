@@ -77,3 +77,43 @@ export interface BookingResult {
   googleEventId?: string;
   error?: string;
 }
+
+export interface BookingRequest {
+  clientName: string;
+  clientEmail: string;
+  date: string;
+  time: string;
+  serviceId: string;
+  serviceName: string;
+}
+
+export interface AdminStats {
+  turnosHoy: number;
+  ingresosHoy: number;
+  turnosSemana: number;
+  ingresosMes: number;
+  variacionMes: number | null;
+  turnosDeHoy: Array<{
+    date: string;
+    status: "confirmed" | "cancelled" | "completed";
+    client_name: string;
+    start_time: string;
+    end_time: string;
+    service_name: string;
+    price: number;
+  }>;
+}
+
+export interface FinanceData {
+  period: "week" | "month" | "today";
+  ingresosPorDia: Array<{ date: string; total: number }>;
+  desglosePorServicio: Array<{ name: string; total: number; count: number }>;
+  totalPeriodo: number;
+}
+
+export interface ServiceFormData {
+  name: string;
+  duration_minutes: number;
+  price: number;
+  active: boolean;
+}
