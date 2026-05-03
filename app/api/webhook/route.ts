@@ -54,31 +54,38 @@ export async function POST(request: NextRequest) {
 }
 
 async function processWebhook(rawBody: string): Promise<void> {
+  console.log("processWebhook start, body length:", rawBody.length);
+
   let body: WhatsAppWebhookBody;
 
   try {
     body = JSON.parse(rawBody);
   } catch {
-    console.error("Invalid JSON body");
+    console.error("Invalid JSON body:", rawBody.slice(0, 200));
     return;
   }
 
+  console.log("Parsed body:", JSON.stringify(body).slice(0, 500));
+
   const value = body.entry?.[0]?.changes?.[0]?.value;
   if (!value?.messages?.length) {
-    // Status update or other event — ignore
+    console.log("No messages in payload — ignoring (status update or test ping)");
     return;
   }
 
   const message = value.messages[0];
+  console.log("Message type:", message.type, "from:", message.from);
 
   // Only handle text messages
   if (message.type !== "text" || !message.text?.body) {
+    console.log("Non-text message, skipping");
     return;
   }
 
   const clientPhone = message.from;
   const messageId = message.id;
   const userText = message.text.body.trim();
+  console.log("Processing message from", clientPhone, ":", userText);
 
   // Deduplicate — check if we already processed this message_id
   const { data: existing } = await supabase
