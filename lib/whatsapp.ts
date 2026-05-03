@@ -2,10 +2,20 @@ import crypto from "crypto";
 
 const GRAPH_API_URL = "https://graph.facebook.com/v21.0";
 
+// Argentina mobile numbers come in as 5492XXXXXXXXX from WhatsApp
+// but the API requires 542XXXXXXXXX (without the 9 after country code)
+function normalizeArgentineNumber(phone: string): string {
+  if (phone.startsWith("5492") && phone.length === 13) {
+    return "54" + phone.slice(4);
+  }
+  return phone;
+}
+
 export async function sendWhatsAppMessage(
   to: string,
   message: string
 ): Promise<void> {
+  to = normalizeArgentineNumber(to);
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   const token = process.env.WHATSAPP_TOKEN;
 
