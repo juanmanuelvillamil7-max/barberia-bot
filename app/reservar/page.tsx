@@ -142,17 +142,17 @@ export default function ReservarPage() {
             ))}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontFamily: "var(--font-body)", fontSize: "0.62rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--stone)" }}>
-              {STEP_LABELS[step - 1]}
-            </span>
-            {step > 1 && (
+            {step > 1 ? (
               <button
                 onClick={goPrev}
                 style={{ background: "none", border: "none", fontFamily: "var(--font-body)", fontSize: "0.72rem", letterSpacing: "0.1em", color: "var(--stone)", cursor: "pointer", padding: 0, textDecoration: "underline", textUnderlineOffset: "3px" }}
               >
                 Atrás
               </button>
-            )}
+            ) : <span />}
+            <span style={{ fontFamily: "var(--font-body)", fontSize: "0.62rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--stone)" }}>
+              {STEP_LABELS[step - 1]}
+            </span>
           </div>
         </div>
       )}
