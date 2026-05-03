@@ -25,7 +25,7 @@ export default function LoginPage() {
       });
 
       if (authError) {
-        setError("Email o contraseña incorrectos.");
+        setError(`Error: ${authError.message}`);
         return;
       }
 
