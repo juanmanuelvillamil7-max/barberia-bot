@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { BARBERIA_CONFIG } from "@/lib/config";
 
 export default function LoginPage() {
@@ -18,14 +17,16 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
       });
 
-      if (authError) {
-        setError(`Error: ${authError.message}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(`Error: ${data.error ?? "Credenciales incorrectas"}`);
         return;
       }
 
