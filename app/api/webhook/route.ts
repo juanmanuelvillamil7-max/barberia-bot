@@ -25,12 +25,15 @@ export async function GET(request: NextRequest) {
 
 // POST — Receive incoming WhatsApp messages
 export async function POST(request: NextRequest) {
-  // Verify signature from Meta
   const rawBody = await request.text();
-  const signature = request.headers.get("x-hub-signature-256");
 
-  if (!verifyWebhookSignature(rawBody, signature)) {
-    return new NextResponse("Unauthorized", { status: 401 });
+  // Verify signature only if WHATSAPP_APP_SECRET is configured
+  if (process.env.WHATSAPP_APP_SECRET) {
+    const signature = request.headers.get("x-hub-signature-256");
+    if (!verifyWebhookSignature(rawBody, signature)) {
+      console.error("Webhook signature verification failed");
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
   }
 
   // Always respond 200 immediately to Meta
