@@ -36,20 +36,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Always respond 200 immediately to Meta
-  // Process in background using waitUntil (Vercel/Next.js edge runtime)
-  const responsePromise = processWebhook(rawBody);
-
-  // Use waitUntil if available (Vercel), otherwise fire-and-forget
-  const ctx = (request as NextRequest & { waitUntil?: (p: Promise<unknown>) => void });
-  if (typeof ctx.waitUntil === "function") {
-    ctx.waitUntil(responsePromise);
-  } else {
-    responsePromise.catch((err) =>
-      console.error("Background processing error:", err)
-    );
-  }
-
+  await processWebhook(rawBody);
   return new NextResponse("OK", { status: 200 });
 }
 
