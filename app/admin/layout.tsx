@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Sidebar from "@/components/admin/Sidebar";
 
 export default async function AdminLayout({
@@ -7,19 +5,6 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  let hasSession = false;
-  try {
-    const supabase = createSupabaseServerClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    hasSession = !!session;
-  } catch {
-    hasSession = false;
-  }
-
-  if (!hasSession) {
-    redirect("/admin/login");
-  }
-
   return (
     <div style={{ display: "flex", minHeight: "100dvh", background: "#f4f4f5" }}>
       <Sidebar />
