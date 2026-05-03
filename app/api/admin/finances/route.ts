@@ -1,20 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { verifyAdminSession } from "@/lib/auth";
 import type { FinanceData } from "@/types";
 
-async function verifySession() {
-  try {
-    const serverClient = createSupabaseServerClient();
-    const { data: { session } } = await serverClient.auth.getSession();
-    return !!session;
-  } catch {
-    return false;
-  }
-}
-
 export async function GET(request: NextRequest) {
-  if (!(await verifySession())) {
+  if (!verifyAdminSession(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -28,7 +18,6 @@ export async function GET(request: NextRequest) {
     const today = localNow.toISOString().split("T")[0];
 
     let dateFrom: string;
-
     if (period === "today") {
       dateFrom = today;
     } else if (period === "week") {
@@ -36,7 +25,6 @@ export async function GET(request: NextRequest) {
       d.setUTCDate(d.getUTCDate() - 6);
       dateFrom = d.toISOString().split("T")[0];
     } else {
-      // month
       dateFrom = `${today.substring(0, 7)}-01`;
     }
 
@@ -48,15 +36,11 @@ export async function GET(request: NextRequest) {
       .lte("appointment_date", today)
       .order("appointment_date");
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     const rows = data ?? [];
-
     type ServiceRef = { id: string; name: string; price: number } | null;
 
-    // Group by day
     const byDay: Record<string, number> = {};
     const byService: Record<string, { name: string; total: number; count: number }> = {};
 
@@ -64,34 +48,19 @@ export async function GET(request: NextRequest) {
       const svc = row.services as unknown as ServiceRef;
       const price = svc?.price ?? 0;
       const date = row.appointment_date;
-
       byDay[date] = (byDay[date] ?? 0) + price;
-
       if (svc) {
-        if (!byService[svc.id]) {
-          byService[svc.id] = { name: svc.name, total: 0, count: 0 };
-        }
+        if (!byService[svc.id]) byService[svc.id] = { name: svc.name, total: 0, count: 0 };
         byService[svc.id].total += price;
         byService[svc.id].count += 1;
       }
     }
 
-    const ingresosPorDia = Object.entries(byDay)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, total]) => ({ date, total }));
-
-    const desglosePorServicio = Object.values(byService).sort(
-      (a, b) => b.total - a.total
-    );
-
     const financeData: FinanceData = {
       period: period as "week" | "month" | "today",
-      ingresosPorDia,
-      desglosePorServicio,
-      totalPeriodo: rows.reduce((sum, r) => {
-        const svc = r.services as unknown as ServiceRef;
-        return sum + (svc?.price ?? 0);
-      }, 0),
+      ingresosPorDia: Object.entries(byDay).sort(([a], [b]) => a.localeCompare(b)).map(([date, total]) => ({ date, total })),
+      desglosePorServicio: Object.values(byService).sort((a, b) => b.total - a.total),
+      totalPeriodo: rows.reduce((sum, r) => sum + ((r.services as unknown as ServiceRef)?.price ?? 0), 0),
     };
 
     return NextResponse.json(financeData);

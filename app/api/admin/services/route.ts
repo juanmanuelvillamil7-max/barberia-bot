@@ -1,20 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { verifyAdminSession } from "@/lib/auth";
 import type { ServiceFormData } from "@/types";
 
-async function verifySession() {
-  try {
-    const serverClient = createSupabaseServerClient();
-    const { data: { session } } = await serverClient.auth.getSession();
-    return !!session;
-  } catch {
-    return false;
-  }
-}
-
-export async function GET() {
-  if (!(await verifySession())) {
+export async function GET(request: NextRequest) {
+  if (!verifyAdminSession(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -36,7 +26,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await verifySession())) {
+  if (!verifyAdminSession(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -71,7 +61,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  if (!(await verifySession())) {
+  if (!verifyAdminSession(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -107,7 +97,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!(await verifySession())) {
+  if (!verifyAdminSession(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

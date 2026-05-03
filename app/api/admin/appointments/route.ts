@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-
-async function verifySession() {
-  try {
-    const serverClient = createSupabaseServerClient();
-    const { data: { session } } = await serverClient.auth.getSession();
-    return !!session;
-  } catch {
-    return false;
-  }
-}
+import { verifyAdminSession } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
-  if (!(await verifySession())) {
+  if (!verifyAdminSession(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -55,7 +45,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  if (!(await verifySession())) {
+  if (!verifyAdminSession(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
