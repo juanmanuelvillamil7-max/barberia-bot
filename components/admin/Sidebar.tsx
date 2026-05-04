@@ -6,6 +6,7 @@ import { BARBERIA_CONFIG } from "@/lib/config";
 const navLinks = [
   { href: "/admin", label: "Inicio" },
   { href: "/admin/turnos", label: "Turnos" },
+  { href: "/admin/clientes", label: "Clientes" },
   { href: "/admin/finanzas", label: "Finanzas" },
   { href: "/admin/servicios", label: "Servicios" },
 ];

@@ -7,7 +7,7 @@ interface BookingConfirmationProps {
   service: Service;
   date: string;
   time: string;
-  onConfirm: (clientName: string, clientEmail: string) => Promise<void>;
+  onConfirm: (clientName: string, clientEmail: string, clientPhone: string) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -16,7 +16,8 @@ const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 export default function BookingConfirmation({ service, date, time, onConfirm, isLoading }: BookingConfirmationProps) {
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
-  const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
+  const [clientPhone, setClientPhone] = useState("");
+  const [errors, setErrors] = useState<{ name?: string; email?: string; phone?: string }>({});
 
   const displayDate = (() => {
     const d = new Date(`${date}T12:00:00`);
@@ -24,10 +25,11 @@ export default function BookingConfirmation({ service, date, time, onConfirm, is
   })();
 
   function validate(): boolean {
-    const e: { name?: string; email?: string } = {};
+    const e: { name?: string; email?: string; phone?: string } = {};
     if (!clientName.trim()) e.name = "Ingresá tu nombre";
     if (!clientEmail.trim()) e.email = "Ingresá tu email";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) e.email = "Email inválido";
+    if (!clientPhone.trim()) e.phone = "Ingresá tu WhatsApp";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -35,7 +37,7 @@ export default function BookingConfirmation({ service, date, time, onConfirm, is
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
-    await onConfirm(clientName.trim(), clientEmail.trim());
+    await onConfirm(clientName.trim(), clientEmail.trim(), clientPhone.trim());
   }
 
   const inputStyle = (hasError: boolean): React.CSSProperties => ({
@@ -50,6 +52,23 @@ export default function BookingConfirmation({ service, date, time, onConfirm, is
     outline: "none",
     boxSizing: "border-box",
   });
+
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontFamily: "var(--font-body)",
+    fontSize: "0.62rem",
+    letterSpacing: "0.2em",
+    textTransform: "uppercase",
+    color: "var(--stone)",
+    marginBottom: "0.5rem",
+  };
+
+  const errorStyle: React.CSSProperties = {
+    fontFamily: "var(--font-body)",
+    fontSize: "0.72rem",
+    color: "var(--ink)",
+    marginTop: "0.35rem",
+  };
 
   return (
     <div>
@@ -68,9 +87,7 @@ export default function BookingConfirmation({ service, date, time, onConfirm, is
       {/* Form */}
       <form onSubmit={handleSubmit} noValidate>
         <div style={{ marginBottom: "1.75rem" }}>
-          <label style={{ display: "block", fontFamily: "var(--font-body)", fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--stone)", marginBottom: "0.5rem" }}>
-            Nombre completo
-          </label>
+          <label style={labelStyle}>Nombre completo</label>
           <input
             type="text"
             value={clientName}
@@ -78,15 +95,11 @@ export default function BookingConfirmation({ service, date, time, onConfirm, is
             placeholder="Tu nombre"
             style={inputStyle(!!errors.name)}
           />
-          {errors.name && (
-            <p style={{ fontFamily: "var(--font-body)", fontSize: "0.72rem", color: "var(--ink)", marginTop: "0.35rem" }}>{errors.name}</p>
-          )}
+          {errors.name && <p style={errorStyle}>{errors.name}</p>}
         </div>
 
-        <div style={{ marginBottom: "2.5rem" }}>
-          <label style={{ display: "block", fontFamily: "var(--font-body)", fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--stone)", marginBottom: "0.5rem" }}>
-            Email
-          </label>
+        <div style={{ marginBottom: "1.75rem" }}>
+          <label style={labelStyle}>Email</label>
           <input
             type="email"
             value={clientEmail}
@@ -94,14 +107,24 @@ export default function BookingConfirmation({ service, date, time, onConfirm, is
             placeholder="tu@email.com"
             style={inputStyle(!!errors.email)}
           />
-          {errors.email && (
-            <p style={{ fontFamily: "var(--font-body)", fontSize: "0.72rem", color: "var(--ink)", marginTop: "0.35rem" }}>{errors.email}</p>
-          )}
+          {errors.email && <p style={errorStyle}>{errors.email}</p>}
           {!errors.email && (
             <p style={{ fontFamily: "var(--font-body)", fontSize: "0.68rem", color: "var(--rule)", marginTop: "0.5rem" }}>
               Te enviamos la confirmación por email.
             </p>
           )}
+        </div>
+
+        <div style={{ marginBottom: "2.5rem" }}>
+          <label style={labelStyle}>WhatsApp</label>
+          <input
+            type="tel"
+            value={clientPhone}
+            onChange={(e) => setClientPhone(e.target.value)}
+            placeholder="11 1234-5678"
+            style={inputStyle(!!errors.phone)}
+          />
+          {errors.phone && <p style={errorStyle}>{errors.phone}</p>}
         </div>
 
         <button

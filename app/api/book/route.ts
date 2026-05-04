@@ -4,10 +4,12 @@ import { getAvailableSlots } from "@/lib/availability";
 import { createCalendarEvent } from "@/lib/calendar";
 import { deleteCalendarEvent } from "@/lib/calendar";
 import { sendConfirmationEmail } from "@/lib/resend";
+import { upsertClientByEmail } from "@/lib/clients";
 
 interface BookingRequestBody {
   clientName: string;
   clientEmail: string;
+  clientPhone?: string;
   date: string;
   time: string;
   serviceId: string;
@@ -22,7 +24,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { clientName, clientEmail, date, time, serviceId, serviceName } = body;
+  const { clientName, clientEmail, clientPhone, date, time, serviceId, serviceName } = body;
 
   if (!clientName || !clientEmail || !date || !time || !serviceId || !serviceName) {
     return NextResponse.json(
@@ -70,12 +72,15 @@ export async function POST(request: NextRequest) {
       endTime
     );
 
+    // Upsert client record
+    const clientId = await upsertClientByEmail(clientName, clientEmail, clientPhone);
+
     // Insert appointment in Supabase
     const { data: appointment, error: insertError } = await supabase
       .from("appointments")
       .insert({
         client_name: clientName,
-        client_phone: "",
+        client_phone: clientPhone ?? "",
         client_email: clientEmail,
         service_id: serviceId,
         appointment_date: date,
@@ -83,6 +88,7 @@ export async function POST(request: NextRequest) {
         end_time: endTime,
         status: "confirmed",
         google_event_id: googleEventId,
+        ...(clientId ? { client_id: clientId } : {}),
       })
       .select("id, client_name, client_email, service_id, appointment_date, start_time, end_time, status, google_event_id, created_at")
       .single();

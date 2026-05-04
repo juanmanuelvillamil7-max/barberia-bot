@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { supabase } from "./supabase";
 import { createCalendarEvent, deleteCalendarEvent } from "./calendar";
 import { getAvailableSlots, getServiceByName, getAllServices } from "./availability";
+import { upsertClientByPhone } from "./clients";
 import { BARBERIA_CONFIG } from "./config";
 import type { ConversationMessage, BookingResult } from "@/types";
 
@@ -152,6 +153,9 @@ async function handleBookAppointment(
     endTime
   );
 
+  // Upsert client by phone
+  const clientId = await upsertClientByPhone(clientName, clientPhone);
+
   // Insert into Supabase
   const { data, error } = await supabase
     .from("appointments")
@@ -164,6 +168,7 @@ async function handleBookAppointment(
       end_time: endTime,
       status: "confirmed",
       google_event_id: googleEventId,
+      ...(clientId ? { client_id: clientId } : {}),
     })
     .select("id")
     .single();

@@ -47,6 +47,7 @@ export default function ReservarPage() {
   const [bookingResult, setBookingResult] = useState<BookingResultData | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [clientName, setClientName] = useState("");
+  const [clientPhone, setClientPhone] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const availableDates = generateAvailableDates();
@@ -77,16 +78,17 @@ export default function ReservarPage() {
     if (step === 3) loadSlots();
   }, [step, loadSlots]);
 
-  async function handleConfirm(name: string, email: string) {
+  async function handleConfirm(name: string, email: string, phone: string) {
     if (!selectedService || !selectedDate || !selectedTime) return;
     setClientName(name);
+    setClientPhone(phone);
     setError(null);
     setBookingLoading(true);
     try {
       const res = await fetch("/api/book", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientName: name, clientEmail: email, date: selectedDate, time: selectedTime, serviceId: selectedService.id, serviceName: selectedService.name }),
+        body: JSON.stringify({ clientName: name, clientEmail: email, clientPhone: phone, date: selectedDate, time: selectedTime, serviceId: selectedService.id, serviceName: selectedService.name }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Error al confirmar. Intentá de nuevo."); return; }
@@ -107,6 +109,7 @@ export default function ReservarPage() {
     setSlots([]);
     setBookingResult(null);
     setClientName("");
+    setClientPhone("");
     setError(null);
   }
 

@@ -111,6 +111,20 @@ export interface FinanceData {
   totalPeriodo: number;
 }
 
+export interface Client {
+  id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  birthday: string | null;
+  created_at: string;
+}
+
+export interface ClientWithStats extends Client {
+  total_cuts: number;
+  last_visit: string | null;
+}
+
 export interface ServiceFormData {
   name: string;
   duration_minutes: number;
