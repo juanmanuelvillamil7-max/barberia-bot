@@ -60,6 +60,49 @@ export async function GET(request: NextRequest) {
   }
 }
 
+export async function POST(request: NextRequest) {
+  if (!verifyAdminSession(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  let body: { full_name: string; email?: string; phone?: string; birthday?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  if (!body.full_name?.trim()) {
+    return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
+  }
+
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const adminClient = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEI!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    const insert: Record<string, string> = { full_name: body.full_name.trim() };
+    if (body.email?.trim()) insert.email = body.email.trim();
+    if (body.phone?.trim()) insert.phone = body.phone.trim();
+    if (body.birthday) insert.birthday = body.birthday;
+
+    const { data, error } = await adminClient
+      .from("clients")
+      .insert(insert)
+      .select("id, full_name, email, phone, birthday, created_at")
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ client: data }, { status: 201 });
+  } catch (err) {
+    console.error("POST /api/admin/clients error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: NextRequest) {
   if (!verifyAdminSession(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

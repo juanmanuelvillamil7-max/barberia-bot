@@ -120,6 +120,15 @@ export interface Client {
   created_at: string;
 }
 
+export interface Expense {
+  id: string;
+  amount: number;
+  description: string;
+  category: string;
+  date: string;
+  created_at: string;
+}
+
 export interface ClientWithStats extends Client {
   total_cuts: number;
   last_visit: string | null;

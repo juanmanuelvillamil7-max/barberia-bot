@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase
       .from("appointments")
       .select("appointment_date, services(id, name, price)")
-      .neq("status", "cancelled")
+      .eq("status", "completed")
       .gte("appointment_date", dateFrom)
       .lte("appointment_date", today)
       .order("appointment_date");
