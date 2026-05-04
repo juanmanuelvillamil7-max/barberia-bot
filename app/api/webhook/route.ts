@@ -74,14 +74,15 @@ async function processWebhook(rawBody: string): Promise<void> {
   const userText = message.text.body.trim();
   console.log("Processing message from", clientPhone, ":", userText);
 
-  // Deduplicate — check if we already processed this message_id
+  // Load conversation (history + bot_active flag)
   const { data: existing } = await supabase
     .from("conversations")
-    .select("messages")
+    .select("messages, bot_active")
     .eq("phone_number", clientPhone)
-    .single();
+    .maybeSingle();
 
   const currentMessages: ConversationMessage[] = existing?.messages ?? [];
+  const botActive: boolean = existing?.bot_active ?? true;
 
   // Check for duplicate message_id in recent messages (last 5)
   const isDuplicate = currentMessages
@@ -95,6 +96,23 @@ async function processWebhook(rawBody: string): Promise<void> {
 
   // Mark as read
   await markMessageAsRead(messageId);
+
+  // If bot is paused (human took over), save message but don't reply
+  if (!botActive) {
+    console.log(`Bot paused for ${clientPhone} — saving message, skipping reply`);
+    const userEntry = {
+      role: "user" as const,
+      content: userText,
+      timestamp: new Date().toISOString(),
+      message_id: messageId,
+    };
+    const updatedMessages = [...currentMessages, userEntry].slice(-BARBERIA_CONFIG.maxMensajesGuardados);
+    await supabase.from("conversations").upsert(
+      { phone_number: clientPhone, messages: updatedMessages, last_activity: new Date().toISOString(), bot_active: false },
+      { onConflict: "phone_number" }
+    );
+    return;
+  }
 
   // Process with GPT
   let assistantReply: string;
@@ -139,6 +157,7 @@ async function processWebhook(rawBody: string): Promise<void> {
       phone_number: clientPhone,
       messages: updatedMessages,
       last_activity: new Date().toISOString(),
+      bot_active: true,
     },
     { onConflict: "phone_number" }
   );
