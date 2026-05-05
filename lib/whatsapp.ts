@@ -2,11 +2,11 @@ import crypto from "crypto";
 
 const GRAPH_API_URL = "https://graph.facebook.com/v21.0";
 
-// Argentina mobile numbers come in as 5492XXXXXXXXX from WhatsApp
-// but the API requires 542XXXXXXXXX (without the 9 after country code)
+// Argentina mobile numbers come in as 549XXXXXXXXXX from WhatsApp
+// but the API requires 54XXXXXXXXXX (without the 9 after country code)
 function normalizeArgentineNumber(phone: string): string {
-  if (phone.startsWith("5492") && phone.length === 13) {
-    return "54" + phone.slice(4);
+  if (phone.startsWith("549") && phone.length === 13) {
+    return "54" + phone.slice(3);
   }
   return phone;
 }
