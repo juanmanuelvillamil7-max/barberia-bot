@@ -2,9 +2,9 @@ import { google } from "googleapis";
 import { BARBERIA_CONFIG } from "./config";
 
 function getCalendarClient() {
-  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ?? process.env.GOOGLE_CLIENT_EMAIL;
-  const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
-  const calendarId = process.env.GOOGLE_CALENDAR_ID;
+  const email = (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ?? process.env.GOOGLE_CLIENT_EMAIL)?.trim();
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n").trim();
+  const calendarId = process.env.GOOGLE_CALENDAR_ID?.trim();
 
   if (!email || !privateKey || !calendarId) {
     const missing = [
