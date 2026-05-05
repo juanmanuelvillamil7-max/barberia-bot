@@ -11,6 +11,7 @@ const navLinks = [
   { href: "/admin/chats", label: "Chats" },
   { href: "/admin/finanzas", label: "Finanzas" },
   { href: "/admin/servicios", label: "Servicios" },
+  { href: "/admin/bot", label: "Bot" },
 ];
 
 export default function Sidebar() {

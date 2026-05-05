@@ -228,9 +228,9 @@ async function handleCancelAppointment(
   });
 }
 
-function buildSystemPrompt(
+async function buildSystemPrompt(
   services: Array<{ name: string; duration_minutes: number; price: number }>
-): string {
+): Promise<string> {
   const now = new Date().toLocaleString("es-AR", {
     timeZone: BARBERIA_CONFIG.timezone,
     dateStyle: "full",
@@ -240,6 +240,14 @@ function buildSystemPrompt(
   const servicesList = services
     .map((s) => `  • ${s.name}: $${s.price.toLocaleString("es-AR")} (${s.duration_minutes} min)`)
     .join("\n");
+
+  const { data: config } = await supabase
+    .from("bot_config")
+    .select("custom_instructions")
+    .eq("id", 1)
+    .single();
+
+  const customInstructions = config?.custom_instructions?.trim();
 
   return `Sos el asistente virtual de ${BARBERIA_CONFIG.nombre}, una barbería ubicada en ${BARBERIA_CONFIG.ciudad}.
 Hablás en español argentino, sos amable, directo y con buena onda.
@@ -267,7 +275,7 @@ REGLAS IMPORTANTES:
 11. Para cancelar un turno, pedile al cliente el día del turno.
 12. Nunca inventes horarios disponibles — siempre usá check_availability antes de mostrar opciones.
 
-FECHA Y HORA ACTUAL: ${now}`;
+FECHA Y HORA ACTUAL: ${now}${customInstructions ? `\n\nINSTRUCCIONES ADICIONALES DEL BARBERO:\n${customInstructions}` : ""}`;
 }
 
 export async function processMessage(
@@ -276,7 +284,7 @@ export async function processMessage(
   clientPhone: string
 ): Promise<string> {
   const services = await getAllServices();
-  const systemPrompt = buildSystemPrompt(services);
+  const systemPrompt = await buildSystemPrompt(services);
 
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: "system", content: systemPrompt },
