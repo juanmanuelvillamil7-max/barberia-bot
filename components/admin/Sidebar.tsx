@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { BARBERIA_CONFIG } from "@/lib/config";
 
@@ -15,6 +16,15 @@ const navLinks = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [copied, setCopied] = useState(false);
+
+  function handleShare() {
+    const url = `${window.location.origin}/reservar`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
 
   async function handleLogout() {
     await fetch("/api/admin/logout", { method: "POST" });
@@ -75,7 +85,25 @@ export default function Sidebar() {
           })}
         </nav>
 
-        <div style={{ padding: "1.25rem 1.5rem", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <div style={{ padding: "1.25rem 1.5rem", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <button
+            onClick={handleShare}
+            style={{
+              background: copied ? "rgba(184,146,42,0.15)" : "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              fontFamily: "var(--font-body)",
+              fontSize: "0.62rem",
+              letterSpacing: "0.15em",
+              textTransform: "uppercase",
+              color: copied ? "#B8922A" : "var(--cream)",
+              cursor: "pointer",
+              padding: "0.5rem 0.75rem",
+              textAlign: "left",
+              transition: "all 0.2s",
+            }}
+          >
+            {copied ? "Link copiado!" : "Compartir reserva"}
+          </button>
           <button
             onClick={handleLogout}
             style={{
@@ -90,6 +118,7 @@ export default function Sidebar() {
               padding: 0,
               textDecoration: "underline",
               textUnderlineOffset: "3px",
+              textAlign: "left",
             }}
           >
             Salir
