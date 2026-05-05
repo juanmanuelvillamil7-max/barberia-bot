@@ -11,6 +11,7 @@ interface Appointment {
   end_time: string;
   status: "confirmed" | "cancelled" | "completed" | "blocked";
   services: { name: string; price: number } | null;
+  google_event_id: string | null;
 }
 
 type ViewMode = "day" | "week" | "month";
@@ -68,9 +69,10 @@ interface AppointmentCardProps {
   onComplete: (id: string) => void;
   onCancel: (id: string) => void;
   onUnblock: (id: string) => void;
+  onSyncCalendar: (id: string) => void;
 }
 
-function AppointmentCard({ appt, compact, onComplete, onCancel, onUnblock }: AppointmentCardProps) {
+function AppointmentCard({ appt, compact, onComplete, onCancel, onUnblock, onSyncCalendar }: AppointmentCardProps) {
   const color = STATUS_COLOR[appt.status];
   const bg = STATUS_BG[appt.status];
   const isBlocked = appt.status === "blocked";
@@ -180,35 +182,28 @@ function AppointmentCard({ appt, compact, onComplete, onCancel, onUnblock }: App
       </div>
 
       {appt.status === "confirmed" && (
-        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
           <button
             onClick={() => onComplete(appt.id)}
-            style={{
-              fontSize: "0.75rem",
-              padding: "3px 10px",
-              background: "#10b981",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
+            style={{ fontSize: "0.75rem", padding: "3px 10px", background: "#10b981", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}
           >
             Completar
           </button>
           <button
             onClick={() => onCancel(appt.id)}
-            style={{
-              fontSize: "0.75rem",
-              padding: "3px 10px",
-              background: "#fff",
-              color: "#ef4444",
-              border: "1px solid #ef4444",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
+            style={{ fontSize: "0.75rem", padding: "3px 10px", background: "#fff", color: "#ef4444", border: "1px solid #ef4444", borderRadius: "4px", cursor: "pointer" }}
           >
             Cancelar
           </button>
+          {!appt.google_event_id && (
+            <button
+              onClick={() => onSyncCalendar(appt.id)}
+              style={{ fontSize: "0.75rem", padding: "3px 10px", background: "#fff", color: "#6b7280", border: "1px solid #d1d5db", borderRadius: "4px", cursor: "pointer" }}
+              title="Crear evento en Google Calendar"
+            >
+              Sincronizar calendario
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -217,13 +212,14 @@ function AppointmentCard({ appt, compact, onComplete, onCancel, onUnblock }: App
 
 // ─── Day View ────────────────────────────────────────────────────────────────
 
-function DayView({ date, appointments, onComplete, onCancel, onUnblock, onBlock }: {
+function DayView({ date, appointments, onComplete, onCancel, onUnblock, onBlock, onSyncCalendar }: {
   date: Date;
   appointments: Appointment[];
   onComplete: (id: string) => void;
   onCancel: (id: string) => void;
   onUnblock: (id: string) => void;
   onBlock: (date: string, start: string, end: string) => Promise<void>;
+  onSyncCalendar: (id: string) => void;
 }) {
   const dateStr = toLocalDateStr(date);
   const dayAppts = appointments.filter((a) => a.appointment_date === dateStr)
@@ -329,7 +325,7 @@ function DayView({ date, appointments, onComplete, onCancel, onUnblock, onBlock 
                 }}
               >
                 {slotAppts.map((a) => (
-                  <AppointmentCard key={a.id} appt={a} onComplete={onComplete} onCancel={onCancel} onUnblock={onUnblock} />
+                  <AppointmentCard key={a.id} appt={a} onComplete={onComplete} onCancel={onCancel} onUnblock={onUnblock} onSyncCalendar={onSyncCalendar} />
                 ))}
               </div>
             </div>
@@ -348,12 +344,13 @@ function DayView({ date, appointments, onComplete, onCancel, onUnblock, onBlock 
 
 // ─── Week View ───────────────────────────────────────────────────────────────
 
-function WeekView({ date, appointments, onComplete, onCancel, onUnblock }: {
+function WeekView({ date, appointments, onComplete, onCancel, onUnblock, onSyncCalendar }: {
   date: Date;
   appointments: Appointment[];
   onComplete: (id: string) => void;
   onCancel: (id: string) => void;
   onUnblock: (id: string) => void;
+  onSyncCalendar: (id: string) => void;
 }) {
   const monday = startOfWeek(date);
   const days = Array.from({ length: 6 }, (_, i) => addDays(monday, i)); // lun-sáb
@@ -419,7 +416,7 @@ function WeekView({ date, appointments, onComplete, onCancel, onUnblock }: {
                   }}
                 >
                   {slotAppts.map((a) => (
-                    <AppointmentCard key={a.id} appt={a} compact onComplete={onComplete} onCancel={onCancel} onUnblock={onUnblock} />
+                    <AppointmentCard key={a.id} appt={a} compact onComplete={onComplete} onCancel={onCancel} onUnblock={onUnblock} onSyncCalendar={onSyncCalendar} />
                   ))}
                 </div>
               );
@@ -572,6 +569,22 @@ export default function CalendarView() {
     }
   }
 
+  async function handleSyncCalendar(id: string) {
+    const res = await fetch("/api/admin/appointments/sync-calendar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (res.ok && data.google_event_id) {
+      setAppointments((prev) =>
+        prev.map((a) => a.id === id ? { ...a, google_event_id: data.google_event_id } : a)
+      );
+    } else {
+      alert(data.error ?? "Error al sincronizar");
+    }
+  }
+
   async function handleBlock(date: string, start_time: string, end_time: string) {
     const res = await fetch("/api/admin/appointments", {
       method: "POST",
@@ -652,13 +665,15 @@ export default function CalendarView() {
               onComplete={(id) => handleUpdateStatus(id, "completed")}
               onCancel={(id) => handleUpdateStatus(id, "cancelled")}
               onUnblock={handleUnblock}
-              onBlock={handleBlock} />
+              onBlock={handleBlock}
+              onSyncCalendar={handleSyncCalendar} />
           )}
           {view === "week" && (
             <WeekView date={currentDate} appointments={appointments}
               onComplete={(id) => handleUpdateStatus(id, "completed")}
               onCancel={(id) => handleUpdateStatus(id, "cancelled")}
-              onUnblock={handleUnblock} />
+              onUnblock={handleUnblock}
+              onSyncCalendar={handleSyncCalendar} />
           )}
           {view === "month" && (
             <MonthView date={currentDate} appointments={appointments}
