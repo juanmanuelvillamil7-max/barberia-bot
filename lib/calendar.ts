@@ -84,9 +84,11 @@ export async function createCalendarEvent(
     });
 
     return res.data.id ?? null;
-  } catch (err) {
-    console.error("Google Calendar createEvent error:", err);
-    return null;
+  } catch (err: unknown) {
+    const e = err as { message?: string; code?: number; errors?: { message: string }[] };
+    const detail = e?.errors?.[0]?.message ?? e?.message ?? String(err);
+    console.error("Google Calendar createEvent error:", e?.code, detail);
+    throw new Error(`Google Calendar (${e?.code ?? "?"}): ${detail}`);
   }
 }
 

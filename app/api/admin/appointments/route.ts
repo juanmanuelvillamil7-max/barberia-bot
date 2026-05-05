@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { verifyAdminSession } from "@/lib/auth";
+import { createCalendarEvent } from "@/lib/calendar";
 
 export async function GET(request: NextRequest) {
   if (!verifyAdminSession(request)) {
@@ -90,38 +91,67 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { date: string; start_time: string; end_time: string };
+  let body: {
+    type: "block" | "appointment";
+    date: string;
+    start_time: string;
+    end_time: string;
+    client_name?: string;
+    client_phone?: string;
+    service_id?: string;
+    service_name?: string;
+  };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { date, start_time, end_time } = body;
+  const { type, date, start_time, end_time } = body;
   if (!date || !start_time || !end_time) {
     return NextResponse.json({ error: "Missing date, start_time or end_time" }, { status: 400 });
   }
 
-  try {
+  // Blocked slot
+  if (!type || type === "block") {
     const { data, error } = await supabase
       .from("appointments")
-      .insert({
-        appointment_date: date,
-        start_time,
-        end_time,
-        client_name: "Bloqueado",
-        client_phone: "",
-        status: "blocked",
-      })
-      .select("id, client_name, client_phone, appointment_date, start_time, end_time, status")
+      .insert({ appointment_date: date, start_time, end_time, client_name: "Bloqueado", client_phone: "", status: "blocked" })
+      .select("id, client_name, client_phone, appointment_date, start_time, end_time, status, google_event_id")
       .single();
-
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ appointment: data }, { status: 201 });
-  } catch (err) {
-    console.error("POST /api/admin/appointments error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
+
+  // Real appointment
+  if (!body.client_name?.trim()) {
+    return NextResponse.json({ error: "El nombre del cliente es requerido" }, { status: 400 });
+  }
+
+  let googleEventId: string | null = null;
+  try {
+    googleEventId = await createCalendarEvent(body.client_name, body.service_name ?? "Turno", date, start_time, end_time);
+  } catch (err) {
+    console.error("Calendar error on manual appointment:", err);
+  }
+
+  const { data, error } = await supabase
+    .from("appointments")
+    .insert({
+      appointment_date: date,
+      start_time,
+      end_time,
+      client_name: body.client_name.trim(),
+      client_phone: body.client_phone?.trim() ?? "",
+      service_id: body.service_id ?? null,
+      status: "confirmed",
+      google_event_id: googleEventId,
+    })
+    .select("id, client_name, client_phone, appointment_date, start_time, end_time, status, google_event_id, services(name, price)")
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ appointment: data }, { status: 201 });
 }
 
 export async function DELETE(request: NextRequest) {

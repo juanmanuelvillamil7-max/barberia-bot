@@ -34,16 +34,23 @@ export async function POST(request: NextRequest) {
 
   const serviceName = (appt.services as unknown as { name: string } | null)?.name ?? "Turno";
 
-  const googleEventId = await createCalendarEvent(
-    appt.client_name,
-    serviceName,
-    appt.appointment_date,
-    appt.start_time.substring(0, 5),
-    appt.end_time.substring(0, 5)
-  );
+  let googleEventId: string | null = null;
+  try {
+    googleEventId = await createCalendarEvent(
+      appt.client_name,
+      serviceName,
+      appt.appointment_date,
+      appt.start_time.substring(0, 5),
+      appt.end_time.substring(0, 5)
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("sync-calendar error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
   if (!googleEventId) {
-    return NextResponse.json({ error: "No se pudo crear el evento en Google Calendar" }, { status: 500 });
+    return NextResponse.json({ error: "El evento se creó pero no devolvió ID" }, { status: 500 });
   }
 
   await supabase

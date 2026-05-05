@@ -144,14 +144,13 @@ async function handleBookAppointment(
     };
   }
 
-  // Create Google Calendar event first
-  const googleEventId = await createCalendarEvent(
-    clientName,
-    serviceName,
-    date,
-    time,
-    endTime
-  );
+  // Create Google Calendar event (non-blocking — booking succeeds even if calendar fails)
+  let googleEventId: string | null = null;
+  try {
+    googleEventId = await createCalendarEvent(clientName, serviceName, date, time, endTime);
+  } catch (err) {
+    console.error("Calendar event creation failed (booking will still proceed):", err);
+  }
 
   // Upsert client by phone
   const clientId = await upsertClientByPhone(clientName, clientPhone);

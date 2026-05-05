@@ -212,7 +212,7 @@ function AppointmentCard({ appt, compact, onComplete, onCancel, onUnblock, onSyn
 
 // ─── Day View ────────────────────────────────────────────────────────────────
 
-function DayView({ date, appointments, onComplete, onCancel, onUnblock, onBlock, onSyncCalendar }: {
+function DayView({ date, appointments, onComplete, onCancel, onUnblock, onBlock, onSyncCalendar, onCreateAppointment }: {
   date: Date;
   appointments: Appointment[];
   onComplete: (id: string) => void;
@@ -220,76 +220,119 @@ function DayView({ date, appointments, onComplete, onCancel, onUnblock, onBlock,
   onUnblock: (id: string) => void;
   onBlock: (date: string, start: string, end: string) => Promise<void>;
   onSyncCalendar: (id: string) => void;
+  onCreateAppointment: (date: string, start: string, end: string, name: string, phone: string, serviceId: string, serviceName: string, servicePrice: number) => void;
 }) {
   const dateStr = toLocalDateStr(date);
   const dayAppts = appointments.filter((a) => a.appointment_date === dateStr)
     .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
-  const [showBlockForm, setShowBlockForm] = useState(false);
+  const [mode, setMode] = useState<"none" | "block" | "appointment">("none");
   const [blockStart, setBlockStart] = useState("09:00");
   const [blockEnd, setBlockEnd] = useState("10:00");
   const [blocking, setBlocking] = useState(false);
+
+  // New appointment form state
+  const [apptName, setApptName] = useState("");
+  const [apptPhone, setApptPhone] = useState("");
+  const [apptService, setApptService] = useState<{ id: string; name: string; duration_minutes: number; price: number } | null>(null);
+  const [apptServices, setApptServices] = useState<{ id: string; name: string; duration_minutes: number; price: number }[]>([]);
+  const [apptStart, setApptStart] = useState("09:00");
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    if (mode === "appointment" && apptServices.length === 0) {
+      fetch("/api/admin/services")
+        .then((r) => r.json())
+        .then((d) => setApptServices(d.services ?? []))
+        .catch(console.error);
+    }
+  }, [mode, apptServices.length]);
+
+  function getEndTime(start: string, duration: number): string {
+    const [h, m] = start.split(":").map(Number);
+    const total = h * 60 + m + duration;
+    return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+  }
 
   async function handleBlock() {
     if (!blockStart || !blockEnd || blockStart >= blockEnd) return;
     setBlocking(true);
     await onBlock(dateStr, blockStart, blockEnd);
     setBlocking(false);
-    setShowBlockForm(false);
+    setMode("none");
+  }
+
+  async function handleCreateAppt() {
+    if (!apptName.trim() || !apptService) return;
+    setCreating(true);
+    const endTime = getEndTime(apptStart, apptService.duration_minutes);
+    await onCreateAppointment(dateStr, apptStart, endTime, apptName.trim(), apptPhone.trim(), apptService.id, apptService.name, apptService.price);
+    setCreating(false);
+    setMode("none");
+    setApptName(""); setApptPhone(""); setApptService(null);
   }
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
         <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#111827", margin: 0 }}>
           {DAYS_ES[date.getDay()]} {date.getDate()} de {MONTHS_ES[date.getMonth()]} {date.getFullYear()}
         </h2>
-        <button
-          onClick={() => setShowBlockForm((v) => !v)}
-          style={{
-            fontSize: "0.75rem",
-            padding: "4px 12px",
-            background: showBlockForm ? "#6b7280" : "#fff",
-            color: showBlockForm ? "#fff" : "#6b7280",
-            border: "1px solid #d1d5db",
-            borderRadius: "6px",
-            cursor: "pointer",
-          }}
-        >
-          {showBlockForm ? "Cancelar" : "Bloquear horario"}
-        </button>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            onClick={() => setMode(mode === "appointment" ? "none" : "appointment")}
+            style={{ fontSize: "0.75rem", padding: "4px 12px", background: mode === "appointment" ? "#3b82f6" : "#fff", color: mode === "appointment" ? "#fff" : "#3b82f6", border: "1px solid #93c5fd", borderRadius: "6px", cursor: "pointer" }}
+          >
+            {mode === "appointment" ? "Cancelar" : "Nuevo turno"}
+          </button>
+          <button
+            onClick={() => setMode(mode === "block" ? "none" : "block")}
+            style={{ fontSize: "0.75rem", padding: "4px 12px", background: mode === "block" ? "#6b7280" : "#fff", color: mode === "block" ? "#fff" : "#6b7280", border: "1px solid #d1d5db", borderRadius: "6px", cursor: "pointer" }}
+          >
+            {mode === "block" ? "Cancelar" : "Bloquear horario"}
+          </button>
+        </div>
       </div>
 
-      {showBlockForm && (
+      {mode === "block" && (
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem", padding: "0.75rem", background: "#f9fafb", borderRadius: "8px", border: "1px solid #e5e7eb", flexWrap: "wrap" }}>
           <span style={{ fontSize: "0.8rem", color: "#374151", fontWeight: 600 }}>Desde</span>
-          <input
-            type="time"
-            value={blockStart}
-            onChange={(e) => setBlockStart(e.target.value)}
-            style={{ padding: "4px 8px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "0.85rem" }}
-          />
+          <input type="time" value={blockStart} onChange={(e) => setBlockStart(e.target.value)} style={{ padding: "4px 8px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "0.85rem" }} />
           <span style={{ fontSize: "0.8rem", color: "#374151", fontWeight: 600 }}>hasta</span>
-          <input
-            type="time"
-            value={blockEnd}
-            onChange={(e) => setBlockEnd(e.target.value)}
-            style={{ padding: "4px 8px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "0.85rem" }}
-          />
-          <button
-            onClick={handleBlock}
-            disabled={blocking || !blockStart || !blockEnd || blockStart >= blockEnd}
-            style={{
-              fontSize: "0.75rem",
-              padding: "4px 14px",
-              background: "#374151",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: blocking ? "not-allowed" : "pointer",
-            }}
-          >
+          <input type="time" value={blockEnd} onChange={(e) => setBlockEnd(e.target.value)} style={{ padding: "4px 8px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "0.85rem" }} />
+          <button onClick={handleBlock} disabled={blocking || blockStart >= blockEnd} style={{ fontSize: "0.75rem", padding: "4px 14px", background: "#374151", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}>
             {blocking ? "…" : "Confirmar"}
+          </button>
+        </div>
+      )}
+
+      {mode === "appointment" && (
+        <div style={{ marginBottom: "1rem", padding: "1rem", background: "#eff6ff", borderRadius: "8px", border: "1px solid #93c5fd" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "0.7rem", color: "#374151", fontWeight: 600, marginBottom: "4px" }}>Nombre *</label>
+              <input type="text" value={apptName} onChange={(e) => setApptName(e.target.value)} placeholder="Juan García" style={{ width: "100%", padding: "6px 8px", border: "1px solid #93c5fd", borderRadius: "4px", fontSize: "0.85rem", boxSizing: "border-box" }} />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "0.7rem", color: "#374151", fontWeight: 600, marginBottom: "4px" }}>WhatsApp</label>
+              <input type="tel" value={apptPhone} onChange={(e) => setApptPhone(e.target.value)} placeholder="11 1234-5678" style={{ width: "100%", padding: "6px 8px", border: "1px solid #93c5fd", borderRadius: "4px", fontSize: "0.85rem", boxSizing: "border-box" }} />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "0.7rem", color: "#374151", fontWeight: 600, marginBottom: "4px" }}>Servicio *</label>
+              <select value={apptService?.id ?? ""} onChange={(e) => setApptService(apptServices.find((s) => s.id === e.target.value) ?? null)} style={{ width: "100%", padding: "6px 8px", border: "1px solid #93c5fd", borderRadius: "4px", fontSize: "0.85rem", boxSizing: "border-box" }}>
+                <option value="">Seleccionar…</option>
+                {apptServices.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.duration_minutes}min — ${s.price.toLocaleString("es-AR")})</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "0.7rem", color: "#374151", fontWeight: 600, marginBottom: "4px" }}>
+                Hora inicio {apptService ? `→ fin: ${getEndTime(apptStart, apptService.duration_minutes)}` : ""}
+              </label>
+              <input type="time" value={apptStart} onChange={(e) => setApptStart(e.target.value)} style={{ padding: "6px 8px", border: "1px solid #93c5fd", borderRadius: "4px", fontSize: "0.85rem" }} />
+            </div>
+          </div>
+          <button onClick={handleCreateAppt} disabled={creating || !apptName.trim() || !apptService} style={{ fontSize: "0.75rem", padding: "6px 16px", background: "#3b82f6", color: "#fff", border: "none", borderRadius: "4px", cursor: creating || !apptName.trim() || !apptService ? "not-allowed" : "pointer" }}>
+            {creating ? "Guardando…" : "Confirmar turno"}
           </button>
         </div>
       )}
@@ -589,11 +632,30 @@ export default function CalendarView() {
     const res = await fetch("/api/admin/appointments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date, start_time, end_time }),
+      body: JSON.stringify({ type: "block", date, start_time, end_time }),
     });
     const data = await res.json();
     if (res.ok && data.appointment) {
       setAppointments((prev) => [...prev, { ...data.appointment, services: null }]);
+    }
+  }
+
+  async function handleCreateAppointment(
+    date: string, start_time: string, end_time: string,
+    client_name: string, client_phone: string,
+    service_id: string, service_name: string, service_price: number
+  ) {
+    const res = await fetch("/api/admin/appointments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "appointment", date, start_time, end_time, client_name, client_phone, service_id, service_name }),
+    });
+    const data = await res.json();
+    if (res.ok && data.appointment) {
+      setAppointments((prev) => [...prev, {
+        ...data.appointment,
+        services: { name: service_name, price: service_price },
+      }]);
     }
   }
 
@@ -666,7 +728,8 @@ export default function CalendarView() {
               onCancel={(id) => handleUpdateStatus(id, "cancelled")}
               onUnblock={handleUnblock}
               onBlock={handleBlock}
-              onSyncCalendar={handleSyncCalendar} />
+              onSyncCalendar={handleSyncCalendar}
+              onCreateAppointment={handleCreateAppointment} />
           )}
           {view === "week" && (
             <WeekView date={currentDate} appointments={appointments}
