@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" fill="#111111"/>
+  <!-- Pivot screw -->
+  <circle cx="16" cy="16" r="1.8" fill="#B8922A"/>
+  <!-- Blade 1 (top-left to bottom-right) -->
+  <g transform="rotate(-30, 16, 16)">
+    <ellipse cx="16" cy="9" rx="1.3" ry="6.5" fill="#B8922A"/>
+    <!-- Handle ring 1 -->
+    <ellipse cx="16" cy="23.5" rx="3.5" ry="2.8" fill="none" stroke="#B8922A" stroke-width="1.5"/>
+  </g>
+  <!-- Blade 2 (mirror) -->
+  <g transform="rotate(30, 16, 16)">
+    <ellipse cx="16" cy="9" rx="1.3" ry="6.5" fill="#B8922A"/>
+    <!-- Handle ring 2 -->
+    <ellipse cx="16" cy="23.5" rx="3.5" ry="2.8" fill="none" stroke="#B8922A" stroke-width="1.5"/>
+  </g>
+</svg>
