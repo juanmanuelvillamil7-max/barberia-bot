@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Barbería El Navajero",
+  title: "Rosas Barbería",
   description: "Agendá tu turno",
 };
 

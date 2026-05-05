@@ -1,5 +1,5 @@
 export const BARBERIA_CONFIG = {
-  nombre: "Barbería El Navajero",
+  nombre: "Rosas Barbería",
   profesional: "Martín",
   ciudad: "Buenos Aires",
   // 1=lunes, 2=martes, ..., 6=sábado (0=domingo excluido)
