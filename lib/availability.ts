@@ -30,12 +30,14 @@ export async function getAvailableSlots(
     return [];
   }
 
-  // Check date is within booking window
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Check date is within booking window — use Argentina timezone throughout
+  const todayAR = new Date().toLocaleDateString("en-CA", {
+    timeZone: "America/Argentina/Buenos_Aires",
+  }); // "YYYY-MM-DD"
+  const todayDate = new Date(`${todayAR}T12:00:00`);
   const requestedDate = new Date(`${date}T12:00:00`);
-  const diffDays = Math.ceil(
-    (requestedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+  const diffDays = Math.round(
+    (requestedDate.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24)
   );
 
   if (diffDays < 0 || diffDays > BARBERIA_CONFIG.diasMaxReserva) {
@@ -75,8 +77,14 @@ export async function getAvailableSlots(
 
   let effectiveStart = startMinutes;
   if (diffDays === 0) {
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes() + 30;
+    // Get current time in Argentina
+    const nowAR = new Date().toLocaleTimeString("en-GB", {
+      timeZone: "America/Argentina/Buenos_Aires",
+      hour: "2-digit",
+      minute: "2-digit",
+    }); // "HH:MM"
+    const [arH, arM] = nowAR.split(":").map(Number);
+    const currentMinutes = arH * 60 + arM + 30;
     // Round up to next slot
     const rounded =
       Math.ceil(currentMinutes / BARBERIA_CONFIG.slotMinutos) *
