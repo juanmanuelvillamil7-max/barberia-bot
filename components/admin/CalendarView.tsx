@@ -9,7 +9,7 @@ interface Appointment {
   appointment_date: string;
   start_time: string;
   end_time: string;
-  status: "confirmed" | "cancelled" | "completed";
+  status: "confirmed" | "cancelled" | "completed" | "blocked";
   services: { name: string; price: number } | null;
 }
 
@@ -23,12 +23,14 @@ const STATUS_COLOR: Record<string, string> = {
   confirmed: "#3b82f6",
   completed: "#10b981",
   cancelled: "#9ca3af",
+  blocked: "#6b7280",
 };
 
 const STATUS_BG: Record<string, string> = {
   confirmed: "#eff6ff",
   completed: "#ecfdf5",
   cancelled: "#f3f4f6",
+  blocked: "#f3f4f6",
 };
 
 function toLocalDateStr(date: Date): string {
@@ -65,17 +67,21 @@ interface AppointmentCardProps {
   compact?: boolean;
   onComplete: (id: string) => void;
   onCancel: (id: string) => void;
+  onUnblock: (id: string) => void;
 }
 
-function AppointmentCard({ appt, compact, onComplete, onCancel }: AppointmentCardProps) {
+function AppointmentCard({ appt, compact, onComplete, onCancel, onUnblock }: AppointmentCardProps) {
   const color = STATUS_COLOR[appt.status];
   const bg = STATUS_BG[appt.status];
+  const isBlocked = appt.status === "blocked";
 
   if (compact) {
     return (
       <div
         style={{
-          background: bg,
+          background: isBlocked
+            ? "repeating-linear-gradient(45deg, #f3f4f6, #f3f4f6 4px, #e5e7eb 4px, #e5e7eb 8px)"
+            : bg,
           borderLeft: `3px solid ${color}`,
           borderRadius: "4px",
           padding: "2px 6px",
@@ -86,10 +92,48 @@ function AppointmentCard({ appt, compact, onComplete, onCancel }: AppointmentCar
           textOverflow: "ellipsis",
           cursor: "default",
         }}
-        title={`${appt.start_time.slice(0,5)} ${appt.client_name} — ${appt.services?.name ?? ""}`}
+        title={`${appt.start_time.slice(0,5)} ${isBlocked ? "Bloqueado" : appt.client_name}`}
       >
         <span style={{ fontWeight: 600, color }}>{appt.start_time.slice(0, 5)}</span>{" "}
-        <span style={{ color: "#374151" }}>{appt.client_name}</span>
+        <span style={{ color: "#6b7280" }}>{isBlocked ? "Bloqueado" : appt.client_name}</span>
+      </div>
+    );
+  }
+
+  if (isBlocked) {
+    return (
+      <div
+        style={{
+          background: "repeating-linear-gradient(45deg, #f9fafb, #f9fafb 5px, #f3f4f6 5px, #f3f4f6 10px)",
+          borderLeft: "4px solid #9ca3af",
+          borderRadius: "6px",
+          padding: "0.6rem 0.75rem",
+          marginBottom: "0.5rem",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <div>
+          <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "#6b7280" }}>
+            {appt.start_time.slice(0, 5)} – {appt.end_time.slice(0, 5)}
+          </div>
+          <div style={{ fontSize: "0.78rem", color: "#9ca3af", marginTop: "2px" }}>Horario bloqueado</div>
+        </div>
+        <button
+          onClick={() => onUnblock(appt.id)}
+          style={{
+            fontSize: "0.72rem",
+            padding: "3px 10px",
+            background: "#fff",
+            color: "#6b7280",
+            border: "1px solid #d1d5db",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+        >
+          Desbloquear
+        </button>
       </div>
     );
   }
@@ -173,21 +217,86 @@ function AppointmentCard({ appt, compact, onComplete, onCancel }: AppointmentCar
 
 // ─── Day View ────────────────────────────────────────────────────────────────
 
-function DayView({ date, appointments, onComplete, onCancel }: {
+function DayView({ date, appointments, onComplete, onCancel, onUnblock, onBlock }: {
   date: Date;
   appointments: Appointment[];
   onComplete: (id: string) => void;
   onCancel: (id: string) => void;
+  onUnblock: (id: string) => void;
+  onBlock: (date: string, start: string, end: string) => Promise<void>;
 }) {
   const dateStr = toLocalDateStr(date);
   const dayAppts = appointments.filter((a) => a.appointment_date === dateStr)
     .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
+  const [showBlockForm, setShowBlockForm] = useState(false);
+  const [blockStart, setBlockStart] = useState("09:00");
+  const [blockEnd, setBlockEnd] = useState("10:00");
+  const [blocking, setBlocking] = useState(false);
+
+  async function handleBlock() {
+    if (!blockStart || !blockEnd || blockStart >= blockEnd) return;
+    setBlocking(true);
+    await onBlock(dateStr, blockStart, blockEnd);
+    setBlocking(false);
+    setShowBlockForm(false);
+  }
+
   return (
     <div>
-      <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#111827", marginBottom: "1rem" }}>
-        {DAYS_ES[date.getDay()]} {date.getDate()} de {MONTHS_ES[date.getMonth()]} {date.getFullYear()}
-      </h2>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+        <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#111827", margin: 0 }}>
+          {DAYS_ES[date.getDay()]} {date.getDate()} de {MONTHS_ES[date.getMonth()]} {date.getFullYear()}
+        </h2>
+        <button
+          onClick={() => setShowBlockForm((v) => !v)}
+          style={{
+            fontSize: "0.75rem",
+            padding: "4px 12px",
+            background: showBlockForm ? "#6b7280" : "#fff",
+            color: showBlockForm ? "#fff" : "#6b7280",
+            border: "1px solid #d1d5db",
+            borderRadius: "6px",
+            cursor: "pointer",
+          }}
+        >
+          {showBlockForm ? "Cancelar" : "Bloquear horario"}
+        </button>
+      </div>
+
+      {showBlockForm && (
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem", padding: "0.75rem", background: "#f9fafb", borderRadius: "8px", border: "1px solid #e5e7eb", flexWrap: "wrap" }}>
+          <span style={{ fontSize: "0.8rem", color: "#374151", fontWeight: 600 }}>Desde</span>
+          <input
+            type="time"
+            value={blockStart}
+            onChange={(e) => setBlockStart(e.target.value)}
+            style={{ padding: "4px 8px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "0.85rem" }}
+          />
+          <span style={{ fontSize: "0.8rem", color: "#374151", fontWeight: 600 }}>hasta</span>
+          <input
+            type="time"
+            value={blockEnd}
+            onChange={(e) => setBlockEnd(e.target.value)}
+            style={{ padding: "4px 8px", border: "1px solid #d1d5db", borderRadius: "4px", fontSize: "0.85rem" }}
+          />
+          <button
+            onClick={handleBlock}
+            disabled={blocking || !blockStart || !blockEnd || blockStart >= blockEnd}
+            style={{
+              fontSize: "0.75rem",
+              padding: "4px 14px",
+              background: "#374151",
+              color: "#fff",
+              border: "none",
+              borderRadius: "4px",
+              cursor: blocking ? "not-allowed" : "pointer",
+            }}
+          >
+            {blocking ? "…" : "Confirmar"}
+          </button>
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "48px 1fr", gap: 0 }}>
         {HOURS.map((hour) => {
@@ -220,7 +329,7 @@ function DayView({ date, appointments, onComplete, onCancel }: {
                 }}
               >
                 {slotAppts.map((a) => (
-                  <AppointmentCard key={a.id} appt={a} onComplete={onComplete} onCancel={onCancel} />
+                  <AppointmentCard key={a.id} appt={a} onComplete={onComplete} onCancel={onCancel} onUnblock={onUnblock} />
                 ))}
               </div>
             </div>
@@ -239,11 +348,12 @@ function DayView({ date, appointments, onComplete, onCancel }: {
 
 // ─── Week View ───────────────────────────────────────────────────────────────
 
-function WeekView({ date, appointments, onComplete, onCancel }: {
+function WeekView({ date, appointments, onComplete, onCancel, onUnblock }: {
   date: Date;
   appointments: Appointment[];
   onComplete: (id: string) => void;
   onCancel: (id: string) => void;
+  onUnblock: (id: string) => void;
 }) {
   const monday = startOfWeek(date);
   const days = Array.from({ length: 6 }, (_, i) => addDays(monday, i)); // lun-sáb
@@ -309,7 +419,7 @@ function WeekView({ date, appointments, onComplete, onCancel }: {
                   }}
                 >
                   {slotAppts.map((a) => (
-                    <AppointmentCard key={a.id} appt={a} compact onComplete={onComplete} onCancel={onCancel} />
+                    <AppointmentCard key={a.id} appt={a} compact onComplete={onComplete} onCancel={onCancel} onUnblock={onUnblock} />
                   ))}
                 </div>
               );
@@ -462,6 +572,25 @@ export default function CalendarView() {
     }
   }
 
+  async function handleBlock(date: string, start_time: string, end_time: string) {
+    const res = await fetch("/api/admin/appointments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date, start_time, end_time }),
+    });
+    const data = await res.json();
+    if (res.ok && data.appointment) {
+      setAppointments((prev) => [...prev, { ...data.appointment, services: null }]);
+    }
+  }
+
+  async function handleUnblock(id: string) {
+    const res = await fetch(`/api/admin/appointments?id=${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setAppointments((prev) => prev.filter((a) => a.id !== id));
+    }
+  }
+
   function navigate(dir: number) {
     const d = new Date(currentDate);
     if (view === "day") d.setDate(d.getDate() + dir);
@@ -521,12 +650,15 @@ export default function CalendarView() {
           {view === "day" && (
             <DayView date={currentDate} appointments={appointments}
               onComplete={(id) => handleUpdateStatus(id, "completed")}
-              onCancel={(id) => handleUpdateStatus(id, "cancelled")} />
+              onCancel={(id) => handleUpdateStatus(id, "cancelled")}
+              onUnblock={handleUnblock}
+              onBlock={handleBlock} />
           )}
           {view === "week" && (
             <WeekView date={currentDate} appointments={appointments}
               onComplete={(id) => handleUpdateStatus(id, "completed")}
-              onCancel={(id) => handleUpdateStatus(id, "cancelled")} />
+              onCancel={(id) => handleUpdateStatus(id, "cancelled")}
+              onUnblock={handleUnblock} />
           )}
           {view === "month" && (
             <MonthView date={currentDate} appointments={appointments}

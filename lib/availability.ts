@@ -49,7 +49,7 @@ export async function getAvailableSlots(
     .from("appointments")
     .select("start_time, end_time")
     .eq("appointment_date", date)
-    .eq("status", "confirmed");
+    .in("status", ["confirmed", "blocked"]);
 
   // Fetch Google Calendar events (personal blocks, etc.)
   const calendarEvents = await getCalendarEvents(date);
