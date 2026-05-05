@@ -7,7 +7,12 @@ function getCalendarClient() {
   const calendarId = process.env.GOOGLE_CALENDAR_ID;
 
   if (!email || !privateKey || !calendarId) {
-    throw new Error("Missing Google Calendar env vars");
+    const missing = [
+      !email && "GOOGLE_SERVICE_ACCOUNT_EMAIL / GOOGLE_CLIENT_EMAIL",
+      !privateKey && "GOOGLE_PRIVATE_KEY",
+      !calendarId && "GOOGLE_CALENDAR_ID",
+    ].filter(Boolean).join(", ");
+    throw new Error(`Missing Google Calendar env vars: ${missing}`);
   }
 
   const auth = new google.auth.JWT({
