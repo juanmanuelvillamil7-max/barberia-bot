@@ -179,6 +179,12 @@ async function handleBookAppointment(
     return { success: false, error: "Error al guardar el turno" };
   }
 
+  // Update conversation with client name so it shows in admin chat list
+  await supabase
+    .from("conversations")
+    .update({ client_name: clientName })
+    .eq("phone_number", clientPhone);
+
   return {
     success: true,
     appointmentId: data.id,
